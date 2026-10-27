@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace FireflyIII\Ext;
 
+use FireflyIII\Ext\Banks\BankRegistry;
+use FireflyIII\Ext\Console\DevSeed;
 use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
@@ -46,6 +48,9 @@ final class ExtServiceProvider extends ServiceProvider
 
         // Phase 1: custom periods. Registered after FireflyServiceProvider, so this binding wins.
         $this->app->bind('navigation', static fn (): ExtNavigation => new ExtNavigation());
+
+        // Phase 2: banks
+        $this->app->singleton(BankRegistry::class, static fn (): BankRegistry => BankRegistry::fromConfig((array) config('ext.banks', [])));
     }
 
     public function boot(): void
@@ -56,6 +61,10 @@ final class ExtServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(self::ROOT.'/database/migrations');
 
         $this->bootPeriods();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([DevSeed::class]);
+        }
     }
 
     /**

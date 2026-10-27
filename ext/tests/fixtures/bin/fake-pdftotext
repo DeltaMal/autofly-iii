@@ -1,0 +1,7 @@
+#!/bin/sh
+# Test stand-in for poppler's pdftotext: "pdftotext -layout -enc UTF-8 [-upw PW] <file> -".
+# The test "PDF" is "%PDF-1.4" on the first line followed by a pdftotext -layout dump; print the dump.
+for arg; do prev2="$prev1"; prev1="$arg"; done
+file="$prev2"
+case " $* " in *" -upw bad-pass "*) echo "Command Line Error: Incorrect password" >&2; exit 1 ;; esac
+tail -n +2 "$file"

@@ -34,5 +34,12 @@ Route::group(
         Route::get('periods', ['uses' => 'PeriodController@index', 'as' => 'periods.index']);
         Route::post('periods/close', ['uses' => 'PeriodController@close', 'as' => 'periods.close']);
         Route::post('periods/starts/delete', ['uses' => 'PeriodController@deleteStart', 'as' => 'periods.starts.delete']);
+
+        // Phase 2: statements and auto-recon
+        Route::get('statements', ['uses' => 'StatementController@index', 'as' => 'statements.index']);
+        Route::get('statements/upload', ['uses' => 'StatementController@create', 'as' => 'statements.create']);
+        Route::post('statements', ['uses' => 'StatementController@store', 'as' => 'statements.store']);
+        Route::get('statements/{statementId}', ['uses' => 'StatementController@show', 'as' => 'statements.show'])->whereNumber('statementId');
+        Route::post('statements/{statementId}/commit', ['uses' => 'StatementController@commit', 'as' => 'statements.commit'])->whereNumber('statementId');
     }
 );

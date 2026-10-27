@@ -58,3 +58,31 @@ jobs:
 
       - name: JS tests
         run: node --test ext/tests/js/
+
+  mariadb:
+    # The ext suites again on MariaDB (production runs MariaDB; FK types and JSON columns differ from SQLite).
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:lts
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: firefly
+        ports: ['3306:3306']
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, intl, mbstring, pdo, pdo_mysql, xml, zip, gd, sodium, curl, dom, fileinfo
+          coverage: none
+          tools: composer:v2
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - name: PHPUnit (ext suites) on MariaDB
+        run: |
+          sed -e 's#<env name="DB_CONNECTION" value="sqlite" force="true"/>#<env name="DB_CONNECTION" value="mysql" force="true"/><env name="DB_HOST" value="127.0.0.1" force="true"/><env name="DB_PORT" value="3306" force="true"/><env name="DB_USERNAME" value="root" force="true"/><env name="DB_PASSWORD" value="root" force="true"/>#' \
+              -e 's#<env name="DB_DATABASE" value=":memory:" force="true"/>#<env name="DB_DATABASE" value="firefly" force="true"/>#' \
+              ext/phpunit.xml > ext/phpunit.mariadb.xml
+          vendor/bin/phpunit -c ext/phpunit.mariadb.xml
