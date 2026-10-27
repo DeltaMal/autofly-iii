@@ -82,6 +82,7 @@
                                 @endforeach
                             </div>
                         </div>
+                        @includeIf('ext::reports.cycle-links') {{-- CUSTOM(ext) --}}
 
                     </div>
                 </div>

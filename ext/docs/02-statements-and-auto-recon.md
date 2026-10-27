@@ -65,12 +65,12 @@ Layout facts the parser must handle:
   - `FNB APP TRANSFER` + `FROM <ref>`
   - `FNB APP PAYMENT FROM` + `<name>`
   - `INTERNET TRF FROM` + `<name>`
-  - `#MONTHLY ACCOUNT` + `FEE`: FNB writes its own charges as rows whose description starts with `#` (see **Bank charges** below)
+  - `#MONTHLY ACCOUNT` + `FEE`: rows whose description starts with `#`. They can be interest, account fees or an item that failed to sync from email, and are handled like every other row (see **`#` rows** below)
   - bare debit-order or EFT references (`CREDITCARDSETTLE`, `<REF> <number>`)
   - Counterparty for these = the text after the keyword, otherwise the whole description.
 - **Row order:** rows are in **posting order, newest first**, and **dates are not monotonic**. A 20 Oct row can sit below a 19 Oct row. Never sort before checking the chain.
 - **Balance chain** (posting order, `i` above `i+1`): `balance[i] == balance[i+1] + amount[i]`.
-  - **Service Fee column (decided, kept):** a non-zero value becomes a separate **fee line** plus a warning, and is treated as a bank charge (below). There is no sample with a non-zero service fee yet; once there is one, check whether the fee is inside the chain equation.
+  - **Service Fee column (decided, kept):** a non-zero value becomes a separate **fee line** (counterparty `FNB`, set by the parser) plus a warning. A fee line matches like any other line but never becomes a proposal. There is no sample with a non-zero service fee yet; once there is one, check whether the fee is inside the chain equation.
   - If the chain breaks, `chainValid=false` and auto-commit is not allowed.
 - **Balances:** closing = top row balance, which equals `Current Balance`. Opening = bottom row balance − bottom row amount.
 - **Available vs current:** `Available Balance` < `Current Balance` means card reservations not yet posted. They are already in Firefly (from email) and are *not* on the statement. See the balance breakdown below.
@@ -89,7 +89,7 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
    - Journals on the account (source or destination) dated **line.date − 5 days … line.date + 2 days**. Card reservations from email come *before* posting.
    - The signed amount must be **exactly** equal, seen from the account.
    - Journals linked to another statement line are excluded.
-   - **Bank charges** (a `#` row or a service-fee line) only match a journal that is itself a bank charge (below), and never become proposals.
+   - The same for every line: `#` rows get the same candidates, scoring and one-to-one assignment (see **`#` rows**).
 3. **Score** (higher is better):
    - date distance (dominant);
    - +card ref equal to the email transaction's `internal_reference` (`card..NNNN`);
@@ -119,14 +119,11 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
 
    **Sign convention (decided, kept):** the unexplained difference is **bank minus expected Firefly**. Positive means the bank has more, and booking it moves money *into* the account.
 
-### Bank charges
-Emails are for in-period category analysis; statements fill the gaps and do auto-recon. Importing the bank's own charges is a core job of the statement import.
-- **What is a bank charge:** a row whose description starts with `#` (FNB, e.g. `#MONTHLY ACCOUNT FEE`, posting 34 of the committed fixture), or a service-fee line made from the Service Fee column. Email alerts never contain them.
-- **Matching:** a bank charge only matches a journal that is itself a bank charge:
-  - one created from the same statement row earlier (its link on an earlier statement, or its `stmt-…` external id); or
-  - one whose opposing account is the bank (its name equals `BankDefinition::name()`, case-insensitive).
-  It is **never** matched to an email card or EFT transaction that merely has the same amount, and never proposed against one. Otherwise it is `missing` and gets created.
-- **Creating:** the counterparty is the bank's name from the bank definition (`FNB`), so every fee lands on one expense account. The description stays the statement text (`#MONTHLY ACCOUNT FEE`), so rules can still match it.
+### `#` rows (decided)
+FNB writes some rows with a description starting with `#` (e.g. `#MONTHLY ACCOUNT FEE`, posting 34 of the committed fixture). In the owner's words: "this can include several factors such as interest, account fees or another item that failed to sync via email. Handle it like we handle the rest".
+- **Matching:** exactly like every other line: the same candidates (exact amount, date window), the same score, the same one-to-one assignment, and they can become proposals.
+- **Creating:** the counterparty and description come from the line like any other line (for `#MONTHLY ACCOUNT FEE` both are the statement text), so rules can match them.
+- There is no per-bank expense account setting and no special counterparty.
 
 ### Unexplained
 In the owner's words: "Users should be given a list of unexplained and asked if they want it thrown under unexplained. That still allows it to run as normal firefly process but gives the users the ability to see the diff."
@@ -145,7 +142,7 @@ In the owner's words: "Users should be given a list of unexplained and asked if 
 ### Commit (one DB transaction, idempotent)
 1. **Create** every selected `missing` line through `TransactionWriter`:
    - type: withdrawal if negative, deposit if positive;
-   - counterparty: the line counterparty; for a bank charge, the bank's name;
+   - counterparty: the line counterparty (the description when the parser found none), for `#` rows too;
    - description: the line description;
    - tags: `statement-import`, `<bank>`, plus the import tag;
    - notes: raw line + statement file name;
@@ -185,8 +182,9 @@ In the owner's words: "Users should be given a list of unexplained and asked if 
   - fuel pre-auth with a different amount → proposal;
   - reservation + reversal not on the statement → `reversed_pair`;
   - re-uploading an overlapping statement → zero new transactions;
-  - monthly fee line → missing → created with tag `statement-import`, against the bank's expense account;
-  - a `#` fee row next to an email card transaction with the same amount → the fee stays missing, the card line matches the card transaction;
+  - `#MONTHLY ACCOUNT FEE` with no matching journal → missing → created with tag `statement-import`, counterparty and description from the statement text, like any other line;
+  - a `#` row with an existing journal of the same amount in the window → matched; with a nearby journal of a different amount and strong token overlap → proposal;
+  - a `#` row and a card line with the same amount next to one email card transaction → the card line wins on score (card ref, tokens) and the `#` row stays missing;
   - the unexplained difference is booked only on "yes", with category `Unexplained`; auto-commit never books it.
 - **End to end on a dev stack:**
   1. Create an asset account numbered `62012345678`.

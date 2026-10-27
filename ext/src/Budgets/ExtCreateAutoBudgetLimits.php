@@ -35,7 +35,9 @@ use Illuminate\Support\Facades\Log;
  * Upstream's auto-budget job, plus custom periods. ExtServiceProvider binds it in place of
  * CreateAutoBudgetLimits, which AutoBudgetCronjob resolves with app().
  *
- * - Users whose view range is not CP: exactly upstream (parent::handle()).
+ * - Users whose view range is not CP: exactly upstream (parent::handle()), plus cutting back limits left over
+ *   from custom periods (only ever generated limits that are not calendar months, so users who never used CP
+ *   see no difference).
  * - CP users: monthly auto-budgets of active budgets get their limits on custom period boundaries
  *   (CustomPeriodAutoBudgets), and upstream never makes calendar-month limits for them. Every other
  *   auto-budget goes through upstream's own handleAutoBudget().
@@ -67,14 +69,17 @@ class ExtCreateAutoBudgetLimits extends CreateAutoBudgetLimits
 
     public function handle(): void
     {
+        $date        = $this->extDate ?? today(config('app.timezone'));
+        $custom      = app(CustomPeriodAutoBudgets::class);
         if (!CustomPeriodAutoBudgets::usesCustomPeriods($this->extUser)) {
+            // a user who left CP: no custom period limit may run past this month or into upstream's calendar limits
+            $custom->cutCurrentCycles($this->extUser, $date);
             parent::handle();
+            $custom->resolveOverlaps($this->extUser);
 
             return;
         }
         Log::debug(sprintf('ext: user #%d uses custom periods; monthly auto-budgets follow them.', $this->extUser->id));
-        $date        = $this->extDate ?? today(config('app.timezone'));
-        $custom      = app(CustomPeriodAutoBudgets::class);
         $upstream    = \Closure::bind(function (AutoBudget $autoBudget): void {
             $this->handleAutoBudget($autoBudget);
         }, $this, CreateAutoBudgetLimits::class);

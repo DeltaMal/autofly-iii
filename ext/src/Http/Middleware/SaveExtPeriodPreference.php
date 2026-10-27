@@ -26,9 +26,11 @@ declare(strict_types=1);
 namespace FireflyIII\Ext\Http\Middleware;
 
 use Closure;
+use FireflyIII\Ext\Budgets\CustomPeriodAutoBudgets;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
 use FireflyIII\Support\Facades\Preferences;
+use FireflyIII\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -37,13 +39,33 @@ use Illuminate\Validation\Rule;
  * Saves the extPeriod preference when upstream's preferences form is posted (the fields come from the
  * ext::preferences.view-range partial). Upstream's PreferencesController saves viewRange itself and stays
  * unedited. Pushed onto the user-full-auth group by ExtServiceProvider.
+ *
+ * When that post moves the view range from CP to anything else, the current cycle's auto-budget limits are cut
+ * to end with this calendar month (CustomPeriodAutoBudgets::cutCurrentCycles()), so upstream's run on the 1st
+ * makes a calendar limit that overlaps nothing. Changes through the API are caught by the daily auto-budget job.
  */
 final class SaveExtPeriodPreference
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        if ('POST' !== $request->method() || 'preferences.update' !== $request->route()?->getName() || !$request->has('ext_period') || null === $request->user()) {
+        $user      = $request->user();
+        if ('POST' !== $request->method() || 'preferences.update' !== $request->route()?->getName() || !$user instanceof User) {
             return $next($request);
+        }
+        $wasCustom = CustomPeriodAutoBudgets::usesCustomPeriods($user);
+        $this->saveSettings($request);
+        $response  = $next($request);
+        if ($wasCustom && !CustomPeriodAutoBudgets::usesCustomPeriods($user)) {
+            app(CustomPeriodAutoBudgets::class)->cutCurrentCycles($user, today(config('app.timezone')));
+        }
+
+        return $response;
+    }
+
+    private function saveSettings(Request $request): void
+    {
+        if (!$request->has('ext_period')) {
+            return;
         }
         $input     = (array) $request->input('ext_period', []);
         $validator = Validator::make($input, [
@@ -54,7 +76,7 @@ final class SaveExtPeriodPreference
         if ($validator->fails()) {
             session()->flash('error', (string) trans('ext::periods.invalid_settings', ['errors' => implode(' ', $validator->errors()->all())]));
 
-            return $next($request);
+            return;
         }
         $current   = ExtNavigation::settings();
         $settings  = new PeriodSettings(
@@ -64,7 +86,5 @@ final class SaveExtPeriodPreference
             $current->starts, // explicit starts are managed on /ext/periods
         );
         Preferences::set(ExtNavigation::PREFERENCE, $settings->toArray());
-
-        return $next($request);
     }
 }

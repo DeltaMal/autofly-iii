@@ -25,8 +25,10 @@ declare(strict_types=1);
 
 namespace FireflyIII\Ext;
 
+use FireflyIII\Events\Model\BudgetLimit\CreatedBudgetLimit;
 use FireflyIII\Ext\Banks\BankRegistry;
 use FireflyIII\Ext\Budgets\ExtCreateAutoBudgetLimits;
+use FireflyIII\Ext\Budgets\InitialAutoBudgetLimit;
 use FireflyIII\Ext\Console\DevSeed;
 use FireflyIII\Ext\Console\ImportPythonConfig;
 use FireflyIII\Ext\Console\PollMail;
@@ -34,9 +36,11 @@ use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
 use FireflyIII\Jobs\CreateAutoBudgetLimits;
+use FireflyIII\Models\AutoBudget;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -58,6 +62,7 @@ final class ExtServiceProvider extends ServiceProvider
             CreateAutoBudgetLimits::class,
             static fn ($app, array $parameters): ExtCreateAutoBudgetLimits => new ExtCreateAutoBudgetLimits($parameters[0] ?? $parameters['date'] ?? null)
         );
+        $this->app->singleton(InitialAutoBudgetLimit::class);
 
         // Phase 2: banks
         $this->app->singleton(BankRegistry::class, static fn (): BankRegistry => BankRegistry::fromConfig((array) config('ext.banks', [])));
@@ -97,6 +102,10 @@ final class ExtServiceProvider extends ServiceProvider
             'firefly.default_preferences.'.ExtNavigation::PREFERENCE => PeriodSettings::defaults()->toArray(),
         ]);
         $this->pushMiddlewareToGroup('user-full-auth', SaveExtPeriodPreference::class);
+
+        // A budget created with an auto-budget while on CP gets the current cycle's limit at once.
+        AutoBudget::created(static fn (AutoBudget $autoBudget) => app(InitialAutoBudgetLimit::class)->autoBudgetCreated($autoBudget));
+        Event::listen(CreatedBudgetLimit::class, static fn (CreatedBudgetLimit $event) => app(InitialAutoBudgetLimit::class)->limitCreated($event));
     }
 
     /**

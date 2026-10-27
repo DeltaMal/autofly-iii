@@ -124,7 +124,7 @@ final class StatementImporter
                 'options'           => $options,
                 'summary'           => null,
             ]);
-            $result    = (new Reconciler($account, $bank->name()))->analyse($parsed, $statement->id);
+            $result    = (new Reconciler($account))->analyse($parsed, $statement->id);
             foreach ($result->lines as $outcome) {
                 StatementLineModel::create([
                     'user_group_id'          => $this->user->user_group_id,
@@ -191,9 +191,8 @@ final class StatementImporter
         }
         $options   = array_merge(self::DEFAULT_OPTIONS, (array) $statement->options);
         $account   = $statement->account()->firstOrFail();
-        $bankName  = $this->bankName($statement);
 
-        DB::transaction(function () use ($statement, $options, $account, $bankName, $createLineIds, $confirmedProposals, $ignoreLineIds): void {
+        DB::transaction(function () use ($statement, $options, $account, $createLineIds, $confirmedProposals, $ignoreLineIds): void {
             $writer       = new TransactionWriter($this->user, $this->user->userGroup, TransactionWriter::SOURCE_STATEMENT);
             $created      = [];
             $updated      = [];
@@ -214,7 +213,6 @@ final class StatementImporter
                     continue;
                 }
                 $externalId = Reconciler::externalIdFor($line->line_hash);
-                // bank charges go to one expense account named after the bank; the statement text stays the description
                 try {
                     $group = $writer->store(new TransactionRow(
                         account: $account,
@@ -222,7 +220,7 @@ final class StatementImporter
                         amount: ltrim(bcadd((string) $line->amount, '0', 2), '-'),
                         date: $line->date->copy()->setTimezone(config('app.timezone'))->startOfDay(),
                         description: $line->description,
-                        counterpartyName: self::toLine($line)->isBankCharge() ? $bankName : ('' === (string) $line->counterparty ? $line->description : (string) $line->counterparty),
+                        counterpartyName: '' === (string) $line->counterparty ? $line->description : (string) $line->counterparty,
                         tags: array_values(array_unique(['statement-import', $statement->bank])),
                         notes: sprintf("%s\n\nStatement: %s", (string) $line->raw, $statement->file_name),
                         externalId: $externalId,
@@ -272,7 +270,7 @@ final class StatementImporter
             }
 
             // 4. the breakdown after the changes; an unexplained difference is left for the user to decide on
-            $breakdown    = $this->currentBreakdown($statement, $account, $bankName);
+            $breakdown    = $this->currentBreakdown($statement, $account);
 
             $counts                   = [];
             foreach ($statement->lines()->get() as $line) {
@@ -300,10 +298,10 @@ final class StatementImporter
      *
      * @return array<string, string>
      */
-    public function currentBreakdown(Statement $statement, ?Account $account = null, ?string $bankName = null): array
+    public function currentBreakdown(Statement $statement, ?Account $account = null): array
     {
         $account   ??= $statement->account()->firstOrFail();
-        $reconciler  = new Reconciler($account, $bankName ?? $this->bankName($statement));
+        $reconciler  = new Reconciler($account);
         $outcomes    = array_map(static fn (StatementLineModel $l): LineOutcome => new LineOutcome(self::toLine($l), $l->line_hash, $l->status, $l->transaction_journal_id, null, $l->proposal), $statement->lines()->get()->all());
 
         return $reconciler->breakdown(self::toParsed($statement), $outcomes, (array) ($statement->summary['firefly_only'] ?? []));
@@ -434,11 +432,6 @@ final class StatementImporter
         }
 
         return implode("\n", $lines);
-    }
-
-    public function bankName(Statement $statement): string
-    {
-        return $this->banks->has($statement->bank) ? $this->banks->get($statement->bank)->name() : mb_strtoupper($statement->bank);
     }
 
     /** Rebuilds the parsed statement from the stored rows (for the breakdown after commit). */
