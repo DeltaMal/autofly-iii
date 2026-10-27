@@ -41,6 +41,7 @@ use FireflyIII\Support\Cronjobs\AutoBudgetCronjob;
 use FireflyIII\Support\Facades\Amount;
 use FireflyIII\Support\Facades\Preferences;
 use FireflyIII\User;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -232,6 +233,7 @@ final class CustomPeriodAutoBudgetsTest extends FeatureTestCase
         self::assertSame([['2026-10-23', '2026-11-24', '150']], $this->limits($web));
         self::assertTrue((bool) $web->budgetlimits()->first()->generated);
 
+        $this->actingAsApiUser($user);
         $this->postJson(route('api.v1.budgets.store'), [
             'name' => 'API budget', 'auto_budget_type' => 'adjusted', 'auto_budget_currency_code' => $currency->code,
             'auto_budget_amount' => '75', 'auto_budget_period' => 'monthly',
@@ -320,6 +322,7 @@ final class CustomPeriodAutoBudgetsTest extends FeatureTestCase
         $this->runJob($user, '2026-10-23');
         self::assertSame([['2026-10-23', '2026-11-24', '100']], $this->limits($early));
 
+        $this->actingAsApiUser($user);
         $this->putJson(route('api.v1.preferences.update', ['viewRange']), ['data' => '1M'])->assertOk();
         self::assertSame('1M', Preferences::getForUser($user, 'viewRange')->data);
         self::assertSame([['2026-10-23', '2026-11-24', '100']], $this->limits($early)); // the API does not cut
@@ -383,6 +386,17 @@ final class CustomPeriodAutoBudgetsTest extends FeatureTestCase
         Preferences::setForUser($user, 'extPeriod', self::CP);
 
         return $user;
+    }
+
+    /**
+     * The API guard is Passport's; CI has no OAuth keys, so this test makes a throwaway pair.
+     */
+    private function actingAsApiUser(User $user): void
+    {
+        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        openssl_pkey_export($key, $private);
+        config(['passport.private_key' => $private, 'passport.public_key' => openssl_pkey_get_details($key)['key']]);
+        Passport::actingAs($user);
     }
 
     private function autoBudget(User $user, string $name, AutoBudgetType $type, string $amount, string $period = 'monthly'): Budget
