@@ -27,9 +27,12 @@ namespace FireflyIII\Ext;
 
 use FireflyIII\Ext\Banks\BankRegistry;
 use FireflyIII\Ext\Console\DevSeed;
+use FireflyIII\Ext\Console\ImportPythonConfig;
+use FireflyIII\Ext\Console\PollMail;
 use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
@@ -63,8 +66,14 @@ final class ExtServiceProvider extends ServiceProvider
         $this->bootPeriods();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([DevSeed::class]);
+            $this->commands([DevSeed::class, PollMail::class, ImportPythonConfig::class]);
         }
+
+        // Phase 3: poll the mailboxes every 15 minutes (the ext-scheduler service runs "schedule:work").
+        // Upstream does not use Laravel's scheduler, so nothing clashes.
+        $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
+            $schedule->command('ext:mail:poll')->everyFifteenMinutes()->withoutOverlapping(120)->runInBackground();
+        });
     }
 
     /**

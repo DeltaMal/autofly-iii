@@ -61,4 +61,12 @@ final class ProviderTest extends FeatureTestCase
         $response->assertSee('Bank integrations');
         $response->assertSee('https://github.com/DeltaMal/autofly-iii/tree/ext', false);
     }
+
+    public function testMailPollIsScheduledEveryFifteenMinutes(): void
+    {
+        $events = array_values(array_filter(app(\Illuminate\Console\Scheduling\Schedule::class)->events(), static fn ($e): bool => str_contains((string) $e->command, 'ext:mail:poll')));
+        self::assertCount(1, $events);
+        self::assertSame('*/15 * * * *', $events[0]->expression);
+        self::assertTrue($events[0]->withoutOverlapping);
+    }
 }
