@@ -66,6 +66,12 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
 {
     use AutoBudgetTestHelpers;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+    }
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();

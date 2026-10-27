@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace FireflyIII\Ext\Tests\Feature\Periods;
 
 use Carbon\Carbon;
+use FireflyIII\Ext\Budgets\AutoBudgetOptions;
 use FireflyIII\Ext\Http\Controllers\PeriodController;
 use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
 use FireflyIII\Ext\Periods\ExtNavigation;
@@ -150,7 +151,7 @@ final class CustomPeriodPagesTest extends FeatureTestCase
 
         self::assertSame('CP', Preferences::get('viewRange')->data);
         self::assertSame(
-            ['anchor_day' => 31, 'business_day_rule' => 'next', 'label' => 'end_month', 'starts' => [['date' => '2026-10-23', 'name' => 'Early']]],
+            ['anchor_day' => 31, 'business_day_rule' => 'next', 'label' => 'end_month', 'starts' => [['date' => '2026-10-23', 'name' => 'Early']], 'auto_budgets' => AutoBudgetOptions::defaults()->toArray()],
             Preferences::get('extPeriod')->data
         );
 
