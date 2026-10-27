@@ -36,6 +36,7 @@ use FireflyIII\Repositories\Budget\BudgetLimitRepositoryInterface;
 use FireflyIII\Repositories\Budget\OperationsRepositoryInterface;
 use FireflyIII\Support\Facades\Preferences;
 use FireflyIII\User;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -92,7 +93,7 @@ final class CustomPeriodAutoBudgets
             return;
         }
 
-        $this->takeOverCalendarLimits($user, $autoBudget, $start, $end);
+        $this->takeOverGeneratedLimits($user, $autoBudget, $start, $end);
 
         $overlap = $budget->budgetlimits()
             ->where('budget_limits.transaction_currency_id', $autoBudget->transaction_currency_id)
@@ -112,11 +113,7 @@ final class CustomPeriodAutoBudgets
             return;
         }
 
-        $amount = match ((int) $autoBudget->auto_budget_type) {
-            AutoBudgetType::AUTO_BUDGET_ROLLOVER->value => $this->rolloverAmount($user, $autoBudget, $calendar, $start),
-            AutoBudgetType::AUTO_BUDGET_ADJUSTED->value => $this->adjustedAmount($user, $autoBudget, $calendar, $start),
-            default                                     => (string) $autoBudget->amount,
-        };
+        $amount = $this->amountFor($user, $autoBudget, $calendar, $start);
 
         $repository = app(BudgetLimitRepositoryInterface::class);
         $repository->setUser($user);
@@ -132,6 +129,134 @@ final class CustomPeriodAutoBudgets
         Log::info(sprintf('ext: auto-budget #%d: limit #%d of %s for %s - %s.', $autoBudget->id, $limit->id, $amount, $start->format('Y-m-d'), $end->format('Y-m-d')));
     }
 
+    /**
+     * A budget created with an auto-budget while on CP: upstream's BudgetRepository::store() has just made its
+     * first calendar-month limit ($initial). It becomes the current custom period's limit at once, with the same
+     * amount rules as the cron, and is marked generated like every other limit an auto-budget makes. Other
+     * generated limits are taken over as in handle(); if a limit of the user's overlaps, $initial stays as it is.
+     */
+    public function replaceInitialLimit(User $user, AutoBudget $autoBudget, BudgetLimit $initial, Carbon $date): void
+    {
+        $calendar      = $this->calendarFor($user);
+        [$start, $end] = $calendar->periodFor($date);
+        $this->takeOverGeneratedLimits($user, $autoBudget, $start, $end, $initial);
+
+        $overlap       = $autoBudget->budget->budgetlimits()
+            ->where('budget_limits.id', '!=', $initial->id)
+            ->where('budget_limits.transaction_currency_id', $autoBudget->transaction_currency_id)
+            ->where('budget_limits.start_date', '<=', $end->format('Y-m-d'))
+            ->where('budget_limits.end_date', '>=', $start->format('Y-m-d'))
+            ->count()
+        ;
+        if ($overlap > 0) {
+            Log::warning(sprintf('ext: auto-budget #%d: %d other limit(s) overlap the custom period %s - %s, so the first limit #%d stays as it is.', $autoBudget->id, $overlap, $start->format('Y-m-d'), $end->format('Y-m-d'), $initial->id));
+
+            return;
+        }
+
+        $amount               = $this->amountFor($user, $autoBudget, $calendar, $start);
+        $repository           = app(BudgetLimitRepositoryInterface::class);
+        $repository->setUser($user);
+        $initial->generated   = true;
+        $initial->period      = $autoBudget->period;
+        $repository->update($initial, ['start' => clone $start, 'end' => clone $end, 'amount' => $amount, 'fire_webhooks' => false]);
+        Log::info(sprintf('ext: auto-budget #%d: first limit #%d is now %s for %s - %s.', $autoBudget->id, $initial->id, $amount, $start->format('Y-m-d'), $end->format('Y-m-d')));
+    }
+
+    /**
+     * Leaving CP for a calendar view range: the current cycle's generated limit of each monthly auto-budget is cut
+     * to end on the last day of $date's calendar month, so upstream's run on the next 1st makes a calendar limit
+     * that overlaps nothing. Limits of past cycles stay as they are. Idempotent.
+     */
+    public function cutCurrentCycles(User $user, Carbon $date): void
+    {
+        $monthEnd   = (clone $date)->endOfMonth();
+        $repository = app(BudgetLimitRepositoryInterface::class);
+        $repository->setUser($user);
+        foreach (self::monthlyAutoBudgets($user) as $autoBudget) {
+            $limits = $this->generatedLimits($autoBudget)
+                ->where('budget_limits.start_date', '<=', $date->format('Y-m-d'))
+                ->where('budget_limits.end_date', '>', $monthEnd->format('Y-m-d'))
+                ->get(['budget_limits.*'])
+            ;
+
+            /** @var BudgetLimit $limit */
+            foreach ($limits as $limit) {
+                Log::info(sprintf('ext: auto-budget #%d: limit #%d now ends %s (left custom periods).', $autoBudget->id, $limit->id, $monthEnd->format('Y-m-d')));
+                $repository->update($limit, ['end' => clone $monthEnd, 'fire_webhooks' => false]);
+            }
+        }
+    }
+
+    /**
+     * Leftover overlap after leaving CP (e.g. the view range changed through the API, which the preferences
+     * middleware does not see, and upstream's run on the 1st then made a calendar limit): a generated limit of a
+     * monthly auto-budget that is not a calendar month and runs into a generated calendar-month limit of the same
+     * budget is cut to end the day before that month. Idempotent.
+     */
+    public function resolveOverlaps(User $user): void
+    {
+        $repository = app(BudgetLimitRepositoryInterface::class);
+        $repository->setUser($user);
+        foreach (self::monthlyAutoBudgets($user) as $autoBudget) {
+            $limits = $this->generatedLimits($autoBudget)->orderBy('budget_limits.start_date')->get(['budget_limits.*']);
+
+            /** @var BudgetLimit $month */
+            foreach ($limits->filter(static fn (BudgetLimit $l): bool => self::isCalendarMonth($l)) as $month) {
+                /** @var BudgetLimit $limit */
+                foreach ($limits as $limit) {
+                    if (self::isCalendarMonth($limit) || !$limit->start_date->lt($month->start_date) || $limit->end_date->lt($month->start_date)) {
+                        continue;
+                    }
+                    $newEnd = Carbon::parse($month->start_date->format('Y-m-d'), config('app.timezone'))->subDay()->endOfDay();
+                    Log::info(sprintf('ext: auto-budget #%d: limit #%d now ends %s (overlapped calendar limit #%d).', $autoBudget->id, $limit->id, $newEnd->format('Y-m-d'), $month->id));
+                    $repository->update($limit, ['end' => $newEnd, 'fire_webhooks' => false]);
+                    $limit->refresh();
+                }
+            }
+        }
+    }
+
+    /**
+     * @return Collection<int, AutoBudget>
+     */
+    private static function monthlyAutoBudgets(User $user): Collection
+    {
+        return AutoBudget::leftJoin('budgets', 'auto_budgets.budget_id', '=', 'budgets.id')
+            ->where('budgets.user_id', $user->id)
+            ->where('auto_budgets.period', 'monthly')
+            ->get(['auto_budgets.*'])
+        ;
+    }
+
+    private function generatedLimits(AutoBudget $autoBudget): HasMany
+    {
+        return $autoBudget->budget->budgetlimits()
+            ->where('budget_limits.transaction_currency_id', $autoBudget->transaction_currency_id)
+            ->where('budget_limits.generated', true)
+            ->where('budget_limits.period', 'monthly')
+        ;
+    }
+
+    private static function isCalendarMonth(BudgetLimit $limit): bool
+    {
+        $first = $limit->start_date;
+        $last  = $limit->end_date;
+
+        return 1 === (int) $first->format('j')
+            && $first->format('Y-m') === $last->format('Y-m')
+            && (int) $last->format('j') === (int) $last->format('t');
+    }
+
+    private function amountFor(User $user, AutoBudget $autoBudget, PeriodCalendar $calendar, Carbon $start): string
+    {
+        return match ((int) $autoBudget->auto_budget_type) {
+            AutoBudgetType::AUTO_BUDGET_ROLLOVER->value => $this->rolloverAmount($user, $autoBudget, $calendar, $start),
+            AutoBudgetType::AUTO_BUDGET_ADJUSTED->value => $this->adjustedAmount($user, $autoBudget, $calendar, $start),
+            default                                     => (string) $autoBudget->amount,
+        };
+    }
+
     private function exactLimit(AutoBudget $autoBudget, Carbon $start, Carbon $end): ?BudgetLimit
     {
         /** @var null|BudgetLimit */
@@ -143,12 +268,12 @@ final class CustomPeriodAutoBudgets
     }
 
     /**
-     * Switching to CP mid-month: calendar-month limits that upstream made for this auto-budget (generated by the
-     * cron, or the first limit made when the budget was created, which has the auto-budget amount) and that
-     * overlap the current custom period are cut back to end the day before it starts, or removed when they
-     * start inside it. Limits the user set by hand are never touched.
+     * Switching to CP mid-month: limits that an auto-budget made for this budget (generated: by the cron, ext's
+     * or upstream's) and that overlap the current custom period are cut back to end the day before it starts, or
+     * removed when they start inside it. Any other limit is the user's and is never touched, even when its amount
+     * happens to equal the auto-budget amount.
      */
-    private function takeOverCalendarLimits(User $user, AutoBudget $autoBudget, Carbon $start, Carbon $end): void
+    private function takeOverGeneratedLimits(User $user, AutoBudget $autoBudget, Carbon $start, Carbon $end, ?BudgetLimit $except = null): void
     {
         $repository = app(BudgetLimitRepositoryInterface::class);
         $repository->setUser($user);
@@ -156,35 +281,26 @@ final class CustomPeriodAutoBudgets
             ->where('budget_limits.transaction_currency_id', $autoBudget->transaction_currency_id)
             ->where('budget_limits.start_date', '<=', $end->format('Y-m-d'))
             ->where('budget_limits.end_date', '>=', $start->format('Y-m-d'))
+            ->where('budget_limits.generated', true)
             ->get(['budget_limits.*'])
         ;
 
         /** @var BudgetLimit $limit */
         foreach ($limits as $limit) {
-            if (!self::isCalendarMonth($limit) || (!$limit->generated && 0 !== bccomp((string) $limit->amount, (string) $autoBudget->amount))) {
+            if ($except instanceof BudgetLimit && $except->id === $limit->id) {
                 continue;
             }
             $limitStart = Carbon::parse($limit->start_date->format('Y-m-d'), $start->getTimezone());
             if ($limitStart->lt($start)) {
                 $newEnd = (clone $start)->subDay()->endOfDay();
-                Log::info(sprintf('ext: auto-budget #%d: calendar limit #%d now ends %s (custom periods take over).', $autoBudget->id, $limit->id, $newEnd->format('Y-m-d')));
+                Log::info(sprintf('ext: auto-budget #%d: generated limit #%d now ends %s (custom periods take over).', $autoBudget->id, $limit->id, $newEnd->format('Y-m-d')));
                 $repository->update($limit, ['end' => $newEnd, 'fire_webhooks' => false]);
 
                 continue;
             }
-            Log::info(sprintf('ext: auto-budget #%d: calendar limit #%d removed (custom periods take over).', $autoBudget->id, $limit->id));
+            Log::info(sprintf('ext: auto-budget #%d: generated limit #%d removed (custom periods take over).', $autoBudget->id, $limit->id));
             $repository->destroyBudgetLimit($limit);
         }
-    }
-
-    private static function isCalendarMonth(BudgetLimit $limit): bool
-    {
-        $first = $limit->start_date;
-        $last  = $limit->end_date;
-
-        return 1 === (int) $first->format('j')
-            && $first->format('Y-m') === $last->format('Y-m')
-            && (int) $last->format('j') === (int) $last->format('t');
     }
 
     /**

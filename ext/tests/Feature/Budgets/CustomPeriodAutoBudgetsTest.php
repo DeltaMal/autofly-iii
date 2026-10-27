@@ -164,16 +164,6 @@ final class CustomPeriodAutoBudgetsTest extends FeatureTestCase
         $this->runJob($user, '2026-10-01');
         self::assertSame([['2026-09-01', '2026-09-30', '100'], ['2026-10-01', '2026-10-31', '100']], $this->limits($budget));
 
-        // a budget created on 1M gets a first calendar limit from upstream's BudgetRepository::store()
-        Carbon::setTestNow(Carbon::parse('2026-10-10 09:00:00', config('app.timezone')));
-        $repository = app(BudgetRepositoryInterface::class);
-        $repository->setUser($user);
-        $created = $repository->store([
-            'name' => 'Fuel', 'active' => true, 'auto_budget_type' => 'rollover', 'auto_budget_amount' => '80', 'auto_budget_period' => 'monthly',
-            'currency_id' => Amount::getPrimaryCurrencyByUserGroup($user->userGroup)->id,
-        ]);
-        self::assertSame([['2026-10-01', '2026-10-31', '80']], $this->limits($created));
-
         // a limit the user set by hand on another budget is never touched
         $manual = $this->autoBudget($user, 'Manual', AutoBudgetType::AUTO_BUDGET_RESET, '100');
         $this->limit($manual, '2026-10-01', '2026-10-31', '555');
@@ -183,18 +173,170 @@ final class CustomPeriodAutoBudgetsTest extends FeatureTestCase
         Preferences::setForUser($user, 'extPeriod', self::CP);
         $this->runJob($user, '2026-10-15');
 
+        // generated limits: September is cut back, October (starts inside the cycle) is removed
         self::assertSame([['2026-09-01', '2026-09-24', '100'], ['2026-09-25', '2026-10-22', '100']], $this->limits($budget));
-        self::assertSame([['2026-09-25', '2026-10-22', '80']], $this->limits($created)); // no exact previous period: plain amount
         self::assertSame([['2026-10-01', '2026-10-31', '555']], $this->limits($manual)); // overlaps, so nothing is created
 
         $this->runJob($user, '2026-10-23');
         self::assertSame(['2026-10-23', '2026-11-24', '100'], $this->limits($budget)[2]);
-        self::assertSame(['2026-10-23', '2026-11-24', '160'], $this->limits($created)[1]); // rollover: 80 + 80 unspent
         self::assertSame([['2026-10-01', '2026-10-31', '555']], $this->limits($manual));
+        $this->assertNoOverlaps($budget);
+    }
 
-        foreach ([$budget, $created] as $item) {
-            $this->assertNoOverlaps($item);
-        }
+    /**
+     * Only generated limits are taken over: a limit that is not generated stays, even when it is a calendar month
+     * with exactly the auto-budget amount (e.g. upstream's first limit of a budget created on 1M).
+     */
+    public function testALimitThatIsNotGeneratedIsNeverTouchedEvenWithTheAutoBudgetAmount(): void
+    {
+        $user = $this->createUser('switch@example.com');
+        $this->actingAs($user);
+        Preferences::setForUser($user, 'viewRange', '1M');
+
+        $byHand = $this->autoBudget($user, 'Groceries', AutoBudgetType::AUTO_BUDGET_RESET, '100');
+        $this->limit($byHand, '2026-10-01', '2026-10-31', '100');
+
+        Carbon::setTestNow(Carbon::parse('2026-10-10 09:00:00', config('app.timezone')));
+        $repository = app(BudgetRepositoryInterface::class);
+        $repository->setUser($user);
+        $created    = $repository->store([
+            'name' => 'Fuel', 'active' => true, 'auto_budget_type' => 'rollover', 'auto_budget_amount' => '80', 'auto_budget_period' => 'monthly',
+            'currency_id' => Amount::getPrimaryCurrencyByUserGroup($user->userGroup)->id,
+        ]);
+        self::assertSame([['2026-10-01', '2026-10-31', '80']], $this->limits($created)); // upstream's first limit, on 1M
+
+        Preferences::setForUser($user, 'viewRange', 'CP');
+        Preferences::setForUser($user, 'extPeriod', self::CP);
+        $this->runJob($user, '2026-10-15');
+        $this->runJob($user, '2026-10-23');
+
+        self::assertSame([['2026-10-01', '2026-10-31', '100']], $this->limits($byHand));
+        self::assertSame([['2026-10-01', '2026-10-31', '80']], $this->limits($created));
+    }
+
+    /**
+     * A budget created with a monthly auto-budget while on CP: upstream's first calendar limit becomes the current
+     * cycle's limit at once, through the web form and through the API.
+     */
+    public function testANewBudgetOnCustomPeriodsGetsTheCycleLimitAtOnce(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-27 09:00:00', config('app.timezone')));
+        $user     = $this->cpUser('cp@example.com');
+        $currency = Amount::getPrimaryCurrencyByUserGroup($user->userGroup);
+
+        $this->post(route('budgets.store'), [
+            'name' => 'Web budget', 'active' => '1', 'auto_budget_type' => '2', 'auto_budget_currency_id' => (string) $currency->id,
+            'auto_budget_amount' => '150', 'auto_budget_period' => 'monthly',
+        ])->assertRedirect();
+        $web = Budget::query()->where('name', 'Web budget')->firstOrFail();
+        self::assertSame([['2026-10-23', '2026-11-24', '150']], $this->limits($web));
+        self::assertTrue((bool) $web->budgetlimits()->first()->generated);
+
+        $this->postJson(route('api.v1.budgets.store'), [
+            'name' => 'API budget', 'auto_budget_type' => 'adjusted', 'auto_budget_currency_code' => $currency->code,
+            'auto_budget_amount' => '75', 'auto_budget_period' => 'monthly',
+        ])->assertSuccessful();
+        $api = Budget::query()->where('name', 'API budget')->firstOrFail();
+        self::assertSame([['2026-10-23', '2026-11-24', '75']], $this->limits($api));
+
+        // the cron sees the cycle limit and adds nothing; the next cycle follows the cycle rules
+        $this->runJob($user, '2026-10-27');
+        self::assertCount(1, $this->limits($web));
+        $this->runJob($user, '2026-11-25');
+        self::assertSame(['2026-11-25', '2026-12-24', '300'], $this->limits($web)[1]); // rollover: 150 + 150 unspent
+        self::assertSame(['2026-11-25', '2026-12-24', '150'], $this->limits($api)[1]); // adjusted: 75 + 75 - 0
+
+        // a limit the user adds by hand afterwards, with the auto-budget amount, is left alone
+        $repository = app(\FireflyIII\Repositories\Budget\BudgetLimitRepositoryInterface::class);
+        $repository->setUser($user);
+        $repository->store(['budget_id' => $web->id, 'currency_id' => $currency->id, 'start_date' => Carbon::parse('2026-12-25'), 'end_date' => Carbon::parse('2026-12-31'), 'amount' => '150']);
+        self::assertSame(['2026-12-25', '2026-12-31', '150'], $this->limits($web)[2]);
+    }
+
+    /**
+     * Upstream's update path (an existing budget gains an auto-budget, or its amount, type or period changes)
+     * creates no limit at all, so there is nothing to replace: the cron makes the cycle limit.
+     */
+    public function testUpdatingAnAutoBudgetCreatesNoLimit(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-27 09:00:00', config('app.timezone')));
+        $user       = $this->cpUser('cp@example.com');
+        $repository = app(BudgetRepositoryInterface::class);
+        $repository->setUser($user);
+        $budget     = $repository->store(['name' => 'Plain', 'active' => true]);
+
+        $repository->update($budget, ['auto_budget_type' => AutoBudgetType::AUTO_BUDGET_RESET->value, 'auto_budget_amount' => '60', 'auto_budget_period' => 'monthly']);
+        $repository->update($budget, ['auto_budget_type' => AutoBudgetType::AUTO_BUDGET_ROLLOVER->value, 'auto_budget_amount' => '70', 'auto_budget_period' => 'monthly']);
+        self::assertSame([], $this->limits($budget));
+
+        $this->runJob($user, '2026-10-27');
+        self::assertSame([['2026-10-23', '2026-11-24', '70']], $this->limits($budget));
+    }
+
+    /**
+     * Back from CP to 1M on 27 Oct (cycle 23 Oct - 24 Nov spans 1 Nov) through the preferences form: the cycle
+     * limit is cut to 31 Oct, past cycles stay, and upstream's run on 1 Nov makes a November limit with no overlap.
+     */
+    public function testSwitchingBackFromCustomPeriodsCutsTheCurrentCycle(): void
+    {
+        $user   = $this->cpUser('cp@example.com');
+        $budget = $this->autoBudget($user, 'Groceries', AutoBudgetType::AUTO_BUDGET_RESET, '100');
+        $weekly = $this->autoBudget($user, 'Weekly', AutoBudgetType::AUTO_BUDGET_RESET, '50', 'weekly');
+        $this->runJob($user, '2026-09-25');
+        $this->runJob($user, '2026-10-23');
+        $this->runJob($user, '2026-10-26'); // a Monday: upstream's weekly limit
+        self::assertSame([['2026-09-25', '2026-10-22', '100'], ['2026-10-23', '2026-11-24', '100']], $this->limits($budget));
+
+        Carbon::setTestNow(Carbon::parse('2026-10-27 09:00:00', config('app.timezone')));
+        $this->post(route('preferences.update'), ['viewRange' => '1M', 'ext_period' => ['anchor_day' => '25', 'business_day_rule' => 'previous', 'label' => 'range']])->assertRedirect();
+        self::assertSame('1M', Preferences::getForUser($user, 'viewRange')->data);
+
+        self::assertSame([['2026-09-25', '2026-10-22', '100'], ['2026-10-23', '2026-10-31', '100']], $this->limits($budget));
+        self::assertSame([['2026-10-26', '2026-11-01', '50']], $this->limits($weekly)); // not a monthly auto-budget
+        $this->assertNoOverlaps($budget);
+
+        $this->runJob($user, '2026-10-28'); // idempotent
+        $this->runJob($user, '2026-11-01'); // upstream's magic day
+        self::assertSame([['2026-09-25', '2026-10-22', '100'], ['2026-10-23', '2026-10-31', '100'], ['2026-11-01', '2026-11-30', '100']], $this->limits($budget));
+        $this->assertNoOverlaps($budget);
+
+        // saving the preferences again on 1M changes nothing
+        $this->post(route('preferences.update'), ['viewRange' => '1M'])->assertRedirect();
+        self::assertCount(3, $this->limits($budget));
+    }
+
+    /**
+     * Back from CP through the API, which the preferences middleware does not see: the daily job cuts the cycle
+     * before upstream's run on the 1st, or right after it when the switch came too late; a limit set by hand
+     * is never cut.
+     */
+    public function testTheDailyJobFixesOverlapLeftByAnApiSwitch(): void
+    {
+        $user   = $this->cpUser('cp@example.com');
+        $early  = $this->autoBudget($user, 'Early', AutoBudgetType::AUTO_BUDGET_RESET, '100');
+        $late   = $this->autoBudget($user, 'Late', AutoBudgetType::AUTO_BUDGET_ROLLOVER, '100');
+        $byHand = $this->autoBudget($user, 'By hand', AutoBudgetType::AUTO_BUDGET_RESET, '100');
+        $this->limit($byHand, '2026-10-23', '2026-11-24', '90');
+        $this->runJob($user, '2026-10-23');
+        self::assertSame([['2026-10-23', '2026-11-24', '100']], $this->limits($early));
+
+        $this->putJson(route('api.v1.preferences.update', ['viewRange']), ['data' => '1M'])->assertOk();
+        self::assertSame('1M', Preferences::getForUser($user, 'viewRange')->data);
+        self::assertSame([['2026-10-23', '2026-11-24', '100']], $this->limits($early)); // the API does not cut
+
+        // the next daily run, still in October, cuts the cycle like the preferences form would
+        $this->runJob($user, '2026-10-29');
+        self::assertSame([['2026-10-23', '2026-10-31', '100']], $this->limits($early));
+
+        // a leftover cycle that still runs into November (here: put back by hand) is cut on the 1st, after upstream's run
+        $early->budgetlimits()->update(['end_date' => '2026-11-24']);
+        $late->budgetlimits()->update(['end_date' => '2026-11-24']);
+        $this->runJob($user, '2026-11-01');
+        self::assertSame([['2026-10-23', '2026-10-31', '100'], ['2026-11-01', '2026-11-30', '100']], $this->limits($early));
+        self::assertSame([['2026-10-23', '2026-10-31', '100'], ['2026-11-01', '2026-11-30', '100']], $this->limits($late));
+        $this->assertNoOverlaps($early);
+        $this->assertNoOverlaps($late);
+        self::assertSame(['2026-10-23', '2026-11-24', '90'], $this->limits($byHand)[0]); // the user's limit stays
     }
 
     /**
