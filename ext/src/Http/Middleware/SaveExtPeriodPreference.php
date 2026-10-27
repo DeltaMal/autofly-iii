@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace FireflyIII\Ext\Http\Middleware;
 
 use Closure;
+use FireflyIII\Ext\Budgets\AutoBudgetStatus;
 use FireflyIII\Ext\Budgets\CustomPeriodAutoBudgets;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
@@ -42,7 +43,9 @@ use Illuminate\Validation\Rule;
  *
  * When that post moves the view range from CP to anything else, the current cycle's auto-budget limits are cut
  * to end with this calendar month (CustomPeriodAutoBudgets::cutCurrentCycles()), so upstream's run on the 1st
- * makes a calendar limit that overlaps nothing. Changes through the API are caught by the daily auto-budget job.
+ * makes a calendar limit that overlaps nothing (option "cut_on_leave"), and the days a cycle that ended earlier
+ * leaves uncovered up to the next 1st get a limit (option "gap_fill"). Nothing happens when the user turned the
+ * auto-budget job's "enabled" option off. Changes through the API are caught by the daily auto-budget job.
  */
 final class SaveExtPeriodPreference
 {
@@ -55,8 +58,15 @@ final class SaveExtPeriodPreference
         $wasCustom = CustomPeriodAutoBudgets::usesCustomPeriods($user);
         $this->saveSettings($request);
         $response  = $next($request);
-        if ($wasCustom && !CustomPeriodAutoBudgets::usesCustomPeriods($user)) {
-            app(CustomPeriodAutoBudgets::class)->cutCurrentCycles($user, today(config('app.timezone')));
+        $options   = CustomPeriodAutoBudgets::options($user);
+        if ($wasCustom && $options->enabled && !CustomPeriodAutoBudgets::usesCustomPeriods($user)) {
+            $custom = app(CustomPeriodAutoBudgets::class);
+            $today  = today(config('app.timezone'));
+            if ($options->cutOnLeave) {
+                $custom->cutCurrentCycles($user, $today);
+            }
+            $custom->fillGaps($user, $today, $options->gapFill);
+            AutoBudgetStatus::recordChange($user, 'preferences', $custom->changes());
         }
 
         return $response;
@@ -83,7 +93,8 @@ final class SaveExtPeriodPreference
             null === ($input['anchor_day'] ?? null) || '' === $input['anchor_day'] ? null : (int) $input['anchor_day'],
             (string) $input['business_day_rule'],
             (string) $input['label'],
-            $current->starts, // explicit starts are managed on /ext/periods
+            $current->starts, // explicit starts and the auto-budget options are managed on /ext/periods
+            $current->autoBudgets,
         );
         Preferences::set(ExtNavigation::PREFERENCE, $settings->toArray());
     }

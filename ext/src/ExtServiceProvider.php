@@ -29,6 +29,7 @@ use FireflyIII\Events\Model\BudgetLimit\CreatedBudgetLimit;
 use FireflyIII\Ext\Banks\BankRegistry;
 use FireflyIII\Ext\Budgets\ExtCreateAutoBudgetLimits;
 use FireflyIII\Ext\Budgets\InitialAutoBudgetLimit;
+use FireflyIII\Ext\Console\BackfillAutoBudgetLimits;
 use FireflyIII\Ext\Console\DevSeed;
 use FireflyIII\Ext\Console\ImportPythonConfig;
 use FireflyIII\Ext\Console\PollMail;
@@ -78,7 +79,7 @@ final class ExtServiceProvider extends ServiceProvider
         $this->bootPeriods();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([DevSeed::class, PollMail::class, ImportPythonConfig::class]);
+            $this->commands([DevSeed::class, PollMail::class, ImportPythonConfig::class, BackfillAutoBudgetLimits::class]);
         }
 
         // Phase 3: poll the mailboxes every 15 minutes (the ext-scheduler service runs "schedule:work").
@@ -103,8 +104,10 @@ final class ExtServiceProvider extends ServiceProvider
         ]);
         $this->pushMiddlewareToGroup('user-full-auth', SaveExtPeriodPreference::class);
 
-        // A budget created with an auto-budget while on CP gets the current cycle's limit at once.
+        // Upstream's first limit of a new auto-budget is recorded; on CP it becomes the current cycle's limit at once,
+        // and an edited auto-budget adjusts the current cycle's limit (each per the user's auto-budget options).
         AutoBudget::created(static fn (AutoBudget $autoBudget) => app(InitialAutoBudgetLimit::class)->autoBudgetCreated($autoBudget));
+        AutoBudget::updated(static fn (AutoBudget $autoBudget) => app(InitialAutoBudgetLimit::class)->autoBudgetUpdated($autoBudget));
         Event::listen(CreatedBudgetLimit::class, static fn (CreatedBudgetLimit $event) => app(InitialAutoBudgetLimit::class)->limitCreated($event));
     }
 

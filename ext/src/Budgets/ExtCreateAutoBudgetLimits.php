@@ -35,9 +35,11 @@ use Illuminate\Support\Facades\Log;
  * Upstream's auto-budget job, plus custom periods. ExtServiceProvider binds it in place of
  * CreateAutoBudgetLimits, which AutoBudgetCronjob resolves with app().
  *
+ * - Users who turned the option "enabled" off: exactly upstream (parent::handle()), even on CP.
  * - Users whose view range is not CP: exactly upstream (parent::handle()), plus cutting back limits left over
- *   from custom periods (only ever generated limits that are not calendar months, so users who never used CP
- *   see no difference).
+ *   from custom periods (option "cut_on_leave") and filling the gap after a cut cycle (option "gap_fill"); both
+ *   only ever start from auto-budget-made limits that are not calendar months, so users who never used CP see
+ *   no difference.
  * - CP users: monthly auto-budgets of active budgets get their limits on custom period boundaries
  *   (CustomPeriodAutoBudgets), and upstream never makes calendar-month limits for them. Every other
  *   auto-budget goes through upstream's own handleAutoBudget().
@@ -70,12 +72,26 @@ class ExtCreateAutoBudgetLimits extends CreateAutoBudgetLimits
     public function handle(): void
     {
         $date        = $this->extDate ?? today(config('app.timezone'));
+        $options     = CustomPeriodAutoBudgets::options($this->extUser);
+        if (!$options->enabled) {
+            // "Align monthly auto-budgets with my custom period" is off: upstream, even on CP
+            parent::handle();
+            AutoBudgetStatus::recordJob($this->extUser, now(config('app.timezone')), ['created' => 0, 'adjusted' => 0, 'cut' => 0, 'removed' => 0], true);
+
+            return;
+        }
         $custom      = app(CustomPeriodAutoBudgets::class);
         if (!CustomPeriodAutoBudgets::usesCustomPeriods($this->extUser)) {
             // a user who left CP: no custom period limit may run past this month or into upstream's calendar limits
-            $custom->cutCurrentCycles($this->extUser, $date);
+            if ($options->cutOnLeave) {
+                $custom->cutCurrentCycles($this->extUser, $date);
+            }
             parent::handle();
-            $custom->resolveOverlaps($this->extUser);
+            if ($options->cutOnLeave) {
+                $custom->resolveOverlaps($this->extUser);
+            }
+            $custom->fillGaps($this->extUser, $date, $options->gapFill);
+            AutoBudgetStatus::recordJob($this->extUser, now(config('app.timezone')), $custom->changes());
 
             return;
         }
@@ -96,5 +112,6 @@ class ExtCreateAutoBudgetLimits extends CreateAutoBudgetLimits
             }
             $upstream($autoBudget);
         }
+        AutoBudgetStatus::recordJob($this->extUser, now(config('app.timezone')), $custom->changes());
     }
 }
