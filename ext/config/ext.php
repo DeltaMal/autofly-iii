@@ -29,4 +29,17 @@ return [
 
     // AGPL-3.0 section 13: where users of this instance can get the modified source.
     'source_url' => env('EXT_SOURCE_URL', 'https://github.com/DeltaMal/autofly-iii/tree/ext'),
+
+    // Supported banks (FireflyIII\Ext\Banks\BankDefinition), keyed by id.
+    'banks'      => [
+        'fnb' => FireflyIII\Ext\Banks\Fnb\FnbBank::class,
+    ],
+
+    // Statement import (ext/docs/02).
+    'statements' => [
+        'max_upload_bytes' => 10 * 1024 * 1024,
+        'storage_disk'     => 'upload',
+        'storage_dir'      => 'ext/statements',
+        'pdftotext'        => env('EXT_PDFTOTEXT', 'pdftotext'),
+    ],
 ];
