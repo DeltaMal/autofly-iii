@@ -151,7 +151,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
         $this->runJob($user, '2026-10-23'); // still on: the cycle limit
         self::assertSame([['2026-10-23', '2026-11-24', '100']], $this->limits($budget));
 
-        $this->options($user, ['enabled' => false]);
+        $this->setAutoBudgetOptions($user, ['enabled' => false]);
         $this->runJob($user, '2026-11-01'); // upstream's calendar month, next to the cycle
         self::assertSame([['2026-10-23', '2026-11-24', '100'], ['2026-11-01', '2026-11-30', '100']], $this->limits($budget));
         self::assertTrue(AutoBudgetStatus::get($user)['job']['disabled']);
@@ -188,7 +188,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
         $this->runJob($user, '2026-10-01');
 
         Preferences::setForUser($user, 'viewRange', 'CP');
-        $this->options($user, ['take_over' => false]);
+        $this->setAutoBudgetOptions($user, ['take_over' => false]);
         $this->runJob($user, '2026-10-15');
         $this->runJob($user, '2026-10-23');
         self::assertSame([['2026-09-01', '2026-09-30', '100'], ['2026-10-01', '2026-10-31', '100']], $this->limits($budget));
@@ -204,7 +204,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-10-27 09:00:00', config('app.timezone')));
         $user     = $this->cpUser('cp@example.com');
-        $this->options($user, ['new_budget_immediate' => false]);
+        $this->setAutoBudgetOptions($user, ['new_budget_immediate' => false]);
         $currency = Amount::getPrimaryCurrencyByUserGroup($user->userGroup);
         $this->post(route('budgets.store'), [
             'name' => 'Web budget', 'active' => '1', 'auto_budget_type' => '2', 'auto_budget_currency_id' => (string) $currency->id,
@@ -225,7 +225,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-10-27 09:00:00', config('app.timezone')));
         $user       = $this->cpUser('cp@example.com');
-        $this->options($user, ['edit_immediate' => false]);
+        $this->setAutoBudgetOptions($user, ['edit_immediate' => false]);
         $repository = app(BudgetRepositoryInterface::class);
         $repository->setUser($user);
         $budget     = $repository->store(['name' => 'Plain', 'active' => true]);
@@ -274,7 +274,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     public function testWithoutCutOnLeaveTheCycleKeepsItsEnd(): void
     {
         $user   = $this->cpUser('cp@example.com');
-        $this->options($user, ['cut_on_leave' => false]);
+        $this->setAutoBudgetOptions($user, ['cut_on_leave' => false]);
         $budget = $this->autoBudget($user, 'Groceries', AutoBudgetType::AUTO_BUDGET_RESET, '100');
         $this->runJob($user, '2026-10-23');
 
@@ -300,7 +300,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     public function testGapFillAfterSwitchingBack(string $mode, ?string $amount): void
     {
         $user   = $this->cpUser('cp@example.com');
-        $this->options($user, ['gap_fill' => $mode]);
+        $this->setAutoBudgetOptions($user, ['gap_fill' => $mode]);
         $budget = $this->autoBudget($user, 'Groceries', AutoBudgetType::AUTO_BUDGET_ROLLOVER, '100');
         $weekly = $this->autoBudget($user, 'Weekly', AutoBudgetType::AUTO_BUDGET_RESET, '50', 'weekly');
         $this->runJob($user, '2026-09-25');
@@ -371,7 +371,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
         $user    = $this->createUser('calendar@example.com');
         $this->actingAs($user);
         Preferences::setForUser($user, 'viewRange', '1M');
-        $this->options($user, ['enabled' => false]);
+        $this->setAutoBudgetOptions($user, ['enabled' => false]);
 
         $monthly = $this->storeBudget($user, 'Monthly', 'reset', '80');
         $weekly  = $this->storeBudget($user, 'Weekly', 'rollover', '20', 'weekly');
@@ -440,7 +440,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     /**
      * @param array<string, bool|string> $options
      */
-    private function options(User $user, array $options): void
+    private function setAutoBudgetOptions(User $user, array $options): void
     {
         $data                 = Preferences::getForUser($user, 'extPeriod', self::CP)->data;
         $data                 = is_array($data) ? $data : self::CP;
