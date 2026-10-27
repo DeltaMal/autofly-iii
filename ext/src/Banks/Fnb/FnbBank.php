@@ -51,12 +51,12 @@ final class FnbBank implements BankDefinition
 
     public function emailSenders(): array
     {
-        return ['incontact@fnb.co.za'];
+        return ['inContact@fnb.co.za']; // as written in the Python importer's build_query
     }
 
     public function emailTemplates(): array
     {
-        return [];
+        return [new FnbEmailTemplate()];
     }
 
     public function statementParsers(): array

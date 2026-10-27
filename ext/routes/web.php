@@ -41,5 +41,33 @@ Route::group(
         Route::post('statements', ['uses' => 'StatementController@store', 'as' => 'statements.store']);
         Route::get('statements/{statementId}', ['uses' => 'StatementController@show', 'as' => 'statements.show'])->whereNumber('statementId');
         Route::post('statements/{statementId}/commit', ['uses' => 'StatementController@commit', 'as' => 'statements.commit'])->whereNumber('statementId');
+
+        // Phase 3: email import
+        Route::get('mailboxes', ['uses' => 'MailboxController@index', 'as' => 'mailboxes.index']);
+        Route::get('mailboxes/create', ['uses' => 'MailboxController@create', 'as' => 'mailboxes.create']);
+        Route::post('mailboxes', ['uses' => 'MailboxController@store', 'as' => 'mailboxes.store']);
+        Route::get('mailboxes/{mailboxId}/edit', ['uses' => 'MailboxController@edit', 'as' => 'mailboxes.edit'])->whereNumber('mailboxId');
+        Route::post('mailboxes/{mailboxId}', ['uses' => 'MailboxController@update', 'as' => 'mailboxes.update'])->whereNumber('mailboxId');
+        Route::post('mailboxes/{mailboxId}/delete', ['uses' => 'MailboxController@destroy', 'as' => 'mailboxes.destroy'])->whereNumber('mailboxId');
+        Route::get('mailboxes/{mailboxId}/connect', ['uses' => 'MailboxController@connect', 'as' => 'mailboxes.connect'])->whereNumber('mailboxId');
+        Route::post('mailboxes/{mailboxId}/poll', ['uses' => 'MailboxController@poll', 'as' => 'mailboxes.poll'])->whereNumber('mailboxId');
+        Route::get('mail/oauth/callback', ['uses' => 'MailboxController@callback', 'as' => 'mail.oauth.callback']);
+        Route::get('mail', ['uses' => 'MailController@index', 'as' => 'mail.index']);
+        Route::get('mail/{messageId}', ['uses' => 'MailController@show', 'as' => 'mail.show'])->whereNumber('messageId');
+        Route::post('mail/{messageId}/retry', ['uses' => 'MailController@retry', 'as' => 'mail.retry'])->whereNumber('messageId');
+        Route::get('banks', ['uses' => 'BankController@index', 'as' => 'banks.index']);
+        Route::post('banks/{bank}', ['uses' => 'BankController@update', 'as' => 'banks.update'])->where('bank', '[a-z0-9_-]+');
+        Route::get('accounts', ['uses' => 'AccountIdentifierController@index', 'as' => 'accounts.index']);
+        Route::post('accounts/identifiers', ['uses' => 'AccountIdentifierController@store', 'as' => 'accounts.identifiers.store']);
+        Route::post('accounts/identifiers/{identifierId}/delete', ['uses' => 'AccountIdentifierController@destroy', 'as' => 'accounts.identifiers.destroy'])->whereNumber('identifierId');
+    }
+);
+
+// Site owner only.
+Route::group(
+    ['middleware' => ['web', 'user-full-auth', 'admin'], 'prefix' => 'ext/admin', 'as' => 'ext.admin.', 'namespace' => 'FireflyIII\Ext\Http\Controllers'],
+    static function (): void {
+        Route::get('google', ['uses' => 'GoogleController@index', 'as' => 'google.index']);
+        Route::post('google', ['uses' => 'GoogleController@update', 'as' => 'google.update']);
     }
 );

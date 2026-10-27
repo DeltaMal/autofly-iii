@@ -40,7 +40,7 @@ interface BankDefinition
     /** ISO 3166-1 alpha-2, e.g. 'ZA'. */
     public function country(): string;
 
-    /** @return list<string> sender addresses of alert emails (lowercase) */
+    /** @return list<string> sender addresses of alert emails (compared case-insensitively) */
     public function emailSenders(): array;
 
     /** @return list<object> email templates (FireflyIII\Ext\Mail\EmailTemplate), in the order they are tried */

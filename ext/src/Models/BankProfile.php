@@ -48,14 +48,14 @@ final class BankProfile extends Model
     protected $fillable = ['user_group_id', 'bank', 'account_match', 'default_account_id', 'tags', 'require_authenticated', 'enabled'];
 
     /**
-     * The group's profile for $bank, or an unsaved default one (prefix match, require authentication).
+     * The group's profile for $bank, or an unsaved default one (prefix match, tag = bank id, require authentication).
      */
     public static function forBank(UserGroup|int $group, string $bank): self
     {
         $groupId = $group instanceof UserGroup ? $group->id : $group;
 
         return self::query()->forGroup($groupId)->where('bank', $bank)->first()
-            ?? new self(['user_group_id' => $groupId, 'bank' => $bank, 'account_match' => 'prefix', 'tags' => [], 'require_authenticated' => true, 'enabled' => true]);
+            ?? new self(['user_group_id' => $groupId, 'bank' => $bank, 'account_match' => 'prefix', 'tags' => [$bank], 'require_authenticated' => true, 'enabled' => true]);
     }
 
     public function defaultAccount(): BelongsTo
