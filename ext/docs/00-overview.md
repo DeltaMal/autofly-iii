@@ -27,7 +27,7 @@ The base is upstream release tag **v6.7.9** (2026-10-11): Laravel 13, PHP ≥ 8.
 | Composer | **No new packages.** `composer.lock` changes upstream all the time, and a new package would conflict on every merge. Gmail is called over plain REST with Guzzle, which is already installed. PDF text comes from poppler `pdftotext -layout`, installed in our Docker image. |
 | Python importer | Keeps running in production until the PHP port reaches parity. The port first runs in **shadow mode** ([04](04-deployment-and-cutover.md)). Then we cut over and retire Python. |
 | Real data | **Never committed.** A fork of a public repo is public. Anything real lives in `ext/tests/fixtures/private/`, which is git-ignored. Committed fixtures are anonymised ([fixtures README](../tests/fixtures/README.md)). |
-| Order of work | Phase 0 (scaffolding) → 1 (periods) → 2 (statements and recon) → 3 (email port) → 4 (cut-over, done by the owner locally). Owner decisions on the phase PRs' open questions were applied in one follow-up PR and are recorded in 01–04. |
+| Order of work | Phase 0 (scaffolding) → 1 (periods) → 2 (statements and recon) → 3 (email port) → 4 (cut-over, done by the owner locally). Owner decisions on the phase PRs' open questions were applied in follow-up PRs and are recorded in 01–04. |
 
 ## Rules for staying mergeable (non-negotiable)
 
@@ -55,6 +55,7 @@ The base is upstream release tag **v6.7.9** (2026-10-11): Laravel 13, PHP ≥ 8.
 | `composer.json` | `autoload.psr-4`: `"FireflyIII\\Ext\\": "ext/src/"`. `autoload-dev.psr-4`: `"FireflyIII\\Ext\\Tests\\": "ext/tests/"`. Autoload is not part of composer's lock `content-hash`, so `composer.lock` stays untouched. |
 | `resources/views/components/layout/sidebar.blade.php` | `@includeIf('ext::partials.menu')`, placed before the closing `</ul>`. The partial renders `<li class="nav-header">` + `nav-item`s in upstream's style. It adds the "Bank integrations" menu and the AGPL §13 "Source (modified)" link to the fork. |
 | `resources/views/preferences/index.blade.php` | `@includeIf('ext::preferences.view-range')`, inside the view-range radio group ([01](01-custom-periods.md)). |
+| `resources/views/reports/index.blade.php` | `@includeIf('ext::reports.cycle-links')` after the preset ranges: cycle quick links for `CP` users ([01](01-custom-periods.md)). |
 | `resources/assets/v3/js/support/get-viewrange.js` (+ at most one boot file that loads preferences) | `case 'CP'` delegating to `ext/resources/assets/period-calendar.js` ([01](01-custom-periods.md)). |
 | Root `CLAUDE.md` (new file; upstream has none at v6.7.9, only `AGENTS.md`) | Points agents at `ext/docs/`. |
 
