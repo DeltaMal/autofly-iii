@@ -91,6 +91,17 @@ Cache the boundary list per request: compute ±3 years around the dates asked fo
 - `nextDateByInterval` takes a `Periodicity` enum, not a range, so leave it alone.
 - **Test:** for every upstream key, `ExtNavigation` returns exactly what `Navigation` returns. Use a data provider over all keys and several dates.
 
+### How CP behaves for the user
+
+In the owner's words: "it should basically work like a custom range but instead of us manually entering it every time it defaults to the custom cycle."
+- With view range `CP`, every page that takes a date range (dashboard, budgets, transaction lists, subscriptions, categories, accounts, tags, the report form) starts on the **current cycle**, because `Range` puts the cycle in the session.
+- The date picker's previous/next entries, and the period overviews on account, category and tag pages, are **whole cycles**.
+- The user can still pick any **custom range** in the date picker. It holds for that session only; the `viewRange` and `extPeriod` preferences are never changed by it. A new session starts on the cycle again.
+- These are upstream mechanisms working through `ExtNavigation`; the follow-up check (`CustomPeriodRangeTest`) found no page that needed a fix. The report page's quick links (years, quarters, months) stay calendar presets; its date fields default to the cycle.
+
+### Bills on CP (decided)
+The bills page shows a "per period" amount. For `CP` it divides the yearly amount by the **number of custom periods in the last 365 days** (12 for a monthly salary cycle), through the one-line hook in `Bill\IndexController::amountPerPeriod()`. The owner confirmed this divisor.
+
 ### Audit of other `viewRange` readers (required deliverable)
 - For each reader listed in [How upstream handles periods today](#how-upstream-handles-periods-today-v679), record in the PR description whether it goes through Navigation (fine) or switches on the range itself.
 - For the second kind, add a minimal `CUSTOM(ext)` hunk that delegates to `ExtNavigation`, and list it in `UPSTREAM_TOUCHPOINTS.md`.
@@ -111,7 +122,8 @@ Cache the boundary list per request: compute ±3 years around the dates asked fo
 - **Page `/ext/periods`** (route `ext.periods.index`):
   - shows the current period and the next six;
   - lists the explicit starts, each with a delete button;
-  - has a **"Close current period"** form: date (default today) and optional name. It appends to `starts`, then clears session `start`/`end` so the new period takes effect at once.
+  - has a **"Close current period"** form: date (default today) and optional name. It appends to `starts`, then clears session `start`/`end` so the new period takes effect at once;
+  - in **manual mode with no explicit starts**, shows a warning (`ext::periods.manual_no_starts`) that periods fall back to calendar months until a start date is added.
 
 ### v3 frontend
 - `ext/resources/assets/period-calendar.js`: an ES module, a line-for-line port of `PeriodCalendar` with no dependencies.
@@ -120,8 +132,25 @@ Cache the boundary list per request: compute ±3 years around the dates asked fo
 - If Vite won't import from outside `resources/assets/v3`, put the module at `resources/assets/v3/js/ext/period-calendar.js`. That is a new file inside upstream's tree, but nobody else edits it. Have the JS tests import it from there.
 - **JS tests:** `ext/tests/js/period-calendar.test.mjs` runs the same `period-vectors.json` with `node --test`.
 
-## Known limitations (v1)
-- **Auto-budgets** (`app/Support/Cronjobs/AutoBudgetCronjob` and friends) still create limits for **calendar** periods. Follow-up: an `ext` cron job that, for `CP` users, creates or adjusts auto-budget limits on custom boundaries.
+## Auto-budgets on custom periods
+
+Upstream's `AutoBudgetCronjob` resolves its job with `app(CreateAutoBudgetLimits::class, [$date])`. `ExtServiceProvider` binds that class to `ext/src/Budgets/ExtCreateAutoBudgetLimits` (a subclass), so **no upstream file changes**.
+
+- **Users whose `viewRange` is not `CP`:** `parent::handle()`, exactly upstream.
+- **`CP` users:**
+  - **monthly** auto-budgets of active budgets go through `Budgets\CustomPeriodAutoBudgets`: the limit is made for the custom period containing the cron date (`PeriodCalendar` boundaries from the user's own `extPeriod`). Upstream's job never sees them, so it never makes calendar-month limits for them;
+  - every other auto-budget (daily, weekly, quarterly, half-year, yearly, and deleted or inactive budgets) goes through upstream's own `handleAutoBudget()`, unchanged.
+- **Amounts** are upstream's, with "month" read as "custom period":
+  - **reset:** the auto-budget amount;
+  - **rollover:** the amount, plus what was left of the limit on exactly the previous custom period when that was positive;
+  - **adjusted:** previous limit + amount + spent in the previous period (spent is negative); at least `1` when overspending ate it all;
+  - with no limit on exactly the previous custom period, rollover and adjusted use the plain amount (upstream does the same with no previous month).
+- **When it runs:** on every cron run, not only on a period's first day (upstream only acts on the 1st). A missed run is caught up on the next one; the previous period is complete by then anyway.
+- **Idempotent:** a limit on exactly the current custom period (any currency, like upstream's lookup) means nothing is done. A second run creates nothing.
+- **Switching to `CP` mid-month:** on the first run after the switch, calendar-month limits that upstream made for this auto-budget (cron-generated, or the first limit made when the budget was created, which has the auto-budget amount) and that overlap the current custom period are cut back to end the day before it starts, or removed when they start inside it. Then the custom-period limit is created. Limits the user set by hand are never changed: if one overlaps, no limit is created for that period (logged), so limits never overlap.
+- **Switching back** from `CP` to a calendar range: upstream's cron takes over from its next magic day (the 1st). Custom-period limits already made stay as they are.
+
+## Known limitations
 - **Bills, piggy banks and recurring transactions** keep their own frequencies. This is deliberate.
 
 ## Acceptance
@@ -133,3 +162,4 @@ Cache the boundary list per request: compute ±3 years around the dates asked fo
   - the budget page creates and reads limits for exactly those ranges;
   - reports and transaction lists use the same range.
 - "Close current period" on a chosen date moves the boundary right away.
+- **Auto-budgets** (`CustomPeriodAutoBudgetsTest`, anchor 25, rule `previous`): reset, rollover and adjusted over 25 Sep – 22 Oct, 23 Oct – 24 Nov (moved off Sunday 25 Oct) and 25 Nov – 24 Dec 2026; a second run creates nothing; no calendar-month limit is made; switching mid-month leaves no overlapping limits; a non-`CP` user gets exactly what upstream's job gives.

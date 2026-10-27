@@ -100,7 +100,7 @@ Writes are synchronous inside Firefly, so Python's FIDI `submitted`/settle/verif
 ## Scheduling
 - `ExtServiceProvider` schedules `ext:mail:poll` **every 15 minutes**, `withoutOverlapping()`, through `callAfterResolving(Schedule::class, …)`. Upstream doesn't use Laravel's scheduler, so there's no conflict.
 - In Docker, an `ext-scheduler` service runs the same image with `php artisan schedule:work` ([04](04-deployment-and-cutover.md)).
-- There is also a **"Poll now"** button per mailbox. It runs synchronously with a 120 s limit and flashes the summary.
+- There is also a **"Poll now"** button per mailbox. It runs synchronously with a 120 s limit and flashes the summary. **Decided, kept:** it stays synchronous; it is not dispatched to the scheduler.
 
 ## UI (Blade, extends upstream layout, `user-full-auth` unless noted)
 
@@ -108,7 +108,7 @@ Writes are synchronous inside Firefly, so Python's FIDI `submitted`/settle/verif
 |---|---|
 | `/ext/mailboxes` | List: name, address, banks, mode, enabled, last poll, last error, Connect/Reconnect, Poll now. Create/edit form: name, banks (checkboxes from `BankRegistry`), query, lookback days, labels, mode, enabled. |
 | `/ext/mail` | Activity log of `ext_mail_messages`, filterable by status and mailbox. Detail view: subject, received, bodies (parsed text), unmatched segments, linked transactions (links to Firefly), errors, and **Retry** for failed or unmapped. |
-| `/ext/banks` | Per bank profile: account match mode, default account, tags, require authenticated, enabled. |
+| `/ext/banks` | Per bank profile: account match mode, default account, tags, require authenticated, enabled. **Decided, kept:** a bank with no saved profile tags its imports with just the bank id (`fnb`). `ext:import-python-config` carries over the Python tags (e.g. `[fnb, email-import]`). |
 | `/ext/accounts` | Every active asset and liability account, with its identifiers per bank (partial account numbers, card last-4s). Add or remove. It also shows which accounts the automatic number match would pick. |
 | `/ext/admin/google` (`admin`) | OAuth client id and secret, the redirect URI to register, consent-screen notes. |
 

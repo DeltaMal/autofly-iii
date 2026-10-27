@@ -65,12 +65,12 @@ Layout facts the parser must handle:
   - `FNB APP TRANSFER` + `FROM <ref>`
   - `FNB APP PAYMENT FROM` + `<name>`
   - `INTERNET TRF FROM` + `<name>`
-  - `#MONTHLY ACCOUNT` + `FEE` (the bank fee emails never mention)
+  - `#MONTHLY ACCOUNT` + `FEE`: FNB writes its own charges as rows whose description starts with `#` (see **Bank charges** below)
   - bare debit-order or EFT references (`CREDITCARDSETTLE`, `<REF> <number>`)
   - Counterparty for these = the text after the keyword, otherwise the whole description.
 - **Row order:** rows are in **posting order, newest first**, and **dates are not monotonic**. A 20 Oct row can sit below a 19 Oct row. Never sort before checking the chain.
 - **Balance chain** (posting order, `i` above `i+1`): `balance[i] == balance[i+1] + amount[i]`.
-  - Once a sample with a non-zero service fee exists, confirm whether the fee is inside that equation. Until then, a non-zero fee becomes an **extra fee line** and a warning.
+  - **Service Fee column (decided, kept):** a non-zero value becomes a separate **fee line** plus a warning, and is treated as a bank charge (below). There is no sample with a non-zero service fee yet; once there is one, check whether the fee is inside the chain equation.
   - If the chain breaks, `chainValid=false` and auto-commit is not allowed.
 - **Balances:** closing = top row balance, which equals `Current Balance`. Opening = bottom row balance − bottom row amount.
 - **Available vs current:** `Available Balance` < `Current Balance` means card reservations not yet posted. They are already in Firefly (from email) and are *not* on the statement. See the balance breakdown below.
@@ -89,6 +89,7 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
    - Journals on the account (source or destination) dated **line.date − 5 days … line.date + 2 days**. Card reservations from email come *before* posting.
    - The signed amount must be **exactly** equal, seen from the account.
    - Journals linked to another statement line are excluded.
+   - **Bank charges** (a `#` row or a service-fee line) only match a journal that is itself a bank charge (below), and never become proposals.
 3. **Score** (higher is better):
    - date distance (dominant);
    - +card ref equal to the email transaction's `internal_reference` (`card..NNNN`);
@@ -98,7 +99,7 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
 5. **Outcome per line:**
    - `matched` (journal id, score);
    - `missing` → to be created;
-   - `proposal`: no exact-amount match, but a journal within ±2 days with the same card ref or strong token overlap and a **different amount** (fuel pre-auth, tip, FX). It is shown as "update journal amount from X to Y" and **only applied on explicit confirmation**.
+   - `proposal`: no exact-amount match, but a journal within ±2 days with the same card ref or strong token overlap and a **different amount** (fuel pre-auth, tip, FX). It is shown as "update journal amount from X to Y", with the **difference in percent** of the Firefly amount (e.g. `+36.3%`), and **only applied on explicit confirmation**. There is **no cap** on the difference (decided).
    - `ignored`: set by the user.
 6. **Firefly-only journals** (dated within the statement window and not matched):
    - `pending`: dated within 3 days of the statement date. Probably reserved, not yet posted.
@@ -116,17 +117,42 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
 
    In practice, Firefly balance = bank "Current Balance" − not-yet-posted reservations. That matches the bank's "Available Balance" only when the account has no overdraft facility.
 
+   **Sign convention (decided, kept):** the unexplained difference is **bank minus expected Firefly**. Positive means the bank has more, and booking it moves money *into* the account.
+
+### Bank charges
+Emails are for in-period category analysis; statements fill the gaps and do auto-recon. Importing the bank's own charges is a core job of the statement import.
+- **What is a bank charge:** a row whose description starts with `#` (FNB, e.g. `#MONTHLY ACCOUNT FEE`, posting 34 of the committed fixture), or a service-fee line made from the Service Fee column. Email alerts never contain them.
+- **Matching:** a bank charge only matches a journal that is itself a bank charge:
+  - one created from the same statement row earlier (its link on an earlier statement, or its `stmt-…` external id); or
+  - one whose opposing account is the bank (its name equals `BankDefinition::name()`, case-insensitive).
+  It is **never** matched to an email card or EFT transaction that merely has the same amount, and never proposed against one. Otherwise it is `missing` and gets created.
+- **Creating:** the counterparty is the bank's name from the bank definition (`FNB`), so every fee lands on one expense account. The description stays the statement text (`#MONTHLY ACCOUNT FEE`), so rules can still match it.
+
+### Unexplained
+In the owner's words: "Users should be given a list of unexplained and asked if they want it thrown under unexplained. That still allows it to run as normal firefly process but gives the users the ability to see the diff."
+- **The "Unexplained" section** (review and statement page) lists everything that makes up the difference, using Firefly's balance as it is now:
+  - Firefly-only journals classed as `unexplained`, with view and edit links;
+  - statement lines left unimported (still `missing` after commit) or `ignored`;
+  - proposals not accepted (still `proposal` after commit), with both amounts;
+  - the **remaining unexplained amount** from the balance breakdown.
+- **The question:** whenever the remaining amount is not zero, the page asks **"Book <amount> as Unexplained?"**. This replaces the old "book an adjustment" upload option.
+  - On the review page it is a required yes/no in the commit form. "Yes" books after the commit, and only if the remaining amount is still the one shown (ignoring lines changes it); otherwise nothing is booked and the statement page asks again with the new amount.
+  - On a committed statement it is a pair of buttons.
+- **Yes** books it through `ReconciliationAdjuster` as a normal Firefly **reconciliation** transaction, dated the statement date, with **category `Unexplained`** and **notes listing the items**. The balance then matches the bank, and the difference stays visible in Firefly's reports (category `Unexplained`).
+- **No** books nothing. The difference stays visible on the statement page, which keeps offering the same booking.
+- **Auto-commit never books it.**
+
 ### Commit (one DB transaction, idempotent)
 1. **Create** every selected `missing` line through `TransactionWriter`:
    - type: withdrawal if negative, deposit if positive;
-   - counterparty: the line counterparty;
+   - counterparty: the line counterparty; for a bank charge, the bank's name;
    - description: the line description;
    - tags: `statement-import`, `<bank>`, plus the import tag;
    - notes: raw line + statement file name;
    - rules applied, unless the option is off.
 2. **Apply** confirmed `proposal`s: update the journal amount through upstream's update service, never raw SQL.
 3. **Reconcile** (if the option is on): call `JournalRepository::reconcileById()` for matched and created journals. That sets `transactions.reconciled = true`, as upstream reconciliation does.
-4. **Adjust** (if the option is on and the unexplained difference ≠ 0): `ext/src/Import/ReconciliationAdjuster` books a `reconciliation` transaction for the difference, dated the statement date. It copies the logic of upstream's private `Account/ReconcileController::createReconciliation()` (`TransactionGroupFactory`, type reconciliation, the account's reconciliation account, `reconciled = true`). Note that upstream doesn't fire events for this.
+4. **No adjustment is booked by the commit.** A remaining unexplained difference is booked only when the user answers yes to "Book <amount> as Unexplained?" (see **Unexplained**). `ext/src/Import/ReconciliationAdjuster` then books a `reconciliation` transaction, dated the statement date, category `Unexplained`. It copies the logic of upstream's private `Account/ReconcileController::createReconciliation()` (`TransactionGroupFactory`, type reconciliation, the account's reconciliation account, `reconciled = true`). Note that upstream doesn't fire events for this.
 5. **Persist:** line statuses and journal links, the statement `status = committed`, and a `summary` JSON with the counts and breakdown.
 
 ## UI (`/ext/statements`, `user-full-auth`)
@@ -139,14 +165,14 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
   - **options:**
     - [x] Import missing transactions
     - [x] Mark matched as reconciled
-    - [ ] Book an adjustment for the unexplained difference
     - [x] Apply rules
     - [ ] **Auto-commit without review.** Allowed only when `chainValid`, the account was resolved, and there are no proposals or ambiguities. Otherwise it falls back to review with a notice.
   - **Exact re-upload:** the same `file_sha256` for the account is refused unless "re-process" is ticked.
 - **Review** (`GET /ext/statements/{id}`):
   - the breakdown table;
+  - the **Unexplained** section;
   - tabs **Missing** (checkbox per line, ticked by default), **Matched** (collapsed), **Proposals**, **Firefly only**, **Warnings**;
-  - a **Commit** button.
+  - "Book <amount> as Unexplained?" when the remaining amount is not zero, and a **Commit** button.
 - **Result:** counts plus links to the created transactions (by tag) and to the account's reconcile view.
 - **Storage:** the uploaded file is encrypted with `Crypt::encrypt` on the `upload` disk (as upstream stores attachments), under `ext/statements/<sha>.bin`.
 
@@ -159,7 +185,9 @@ Inputs: a `ParsedStatement`, the Firefly account, and options.
   - fuel pre-auth with a different amount → proposal;
   - reservation + reversal not on the statement → `reversed_pair`;
   - re-uploading an overlapping statement → zero new transactions;
-  - monthly fee line → missing → created with tag `statement-import`.
+  - monthly fee line → missing → created with tag `statement-import`, against the bank's expense account;
+  - a `#` fee row next to an email card transaction with the same amount → the fee stays missing, the card line matches the card transaction;
+  - the unexplained difference is booked only on "yes", with category `Unexplained`; auto-commit never books it.
 - **End to end on a dev stack:**
   1. Create an asset account numbered `62012345678`.
   2. Seed a few email-like transactions.
