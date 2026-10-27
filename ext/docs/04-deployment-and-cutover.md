@@ -70,6 +70,7 @@ The live instance runs from the Python repo's `docker-compose.yml`:
    - Export the Python config with `uv run python scripts/export_config.py > secrets/ext-import.json` (Python repo; written in this phase).
    - `docker compose exec firefly php artisan ext:import-python-config /path/ext-import.json --user=<owner email>`. Mount the file read-only and delete it afterwards.
    - Mailboxes arrive in **shadow** mode.
+   - **Optional: auto-budget backfill.** Budgets created before the fork ran have a first calendar-month limit that upstream did not mark, so after a switch to custom periods ext treats it as the user's and leaves it ([01](01-custom-periods.md#auto-budgets-on-custom-periods)). To let the auto-budget job take those over too, run `docker compose exec firefly php artisan ext:auto-budgets:backfill --dry-run`, check the list, then run it without `--dry-run`. It marks a limit only when there is no doubt: the budget has a monthly auto-budget created together with it, and the limit is not generated, is exactly the calendar month the budget was created in, was stored together with the auto-budget, and has the auto-budget's amount and currency. It is never run automatically and is safe to run again.
 6. **Shadow for 3 or more days** with the Python `email-importer` still running. Each day, check `/ext/mail`:
    - every shadow transaction is `shadow_exists` after Python's next run;
    - `shadow_would_create` rows that persist are bugs: compare the external ids;

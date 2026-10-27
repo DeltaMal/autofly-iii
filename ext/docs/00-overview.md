@@ -131,7 +131,7 @@ Open **one PR per phase** into `ext`. Keep commits focused, and run the ext test
 
 ## Data model (`ext_` tables)
 
-All tables have `id`, timestamps and `user_group_id` (FK `user_groups`), except the link table.
+All tables have `id`, timestamps and `user_group_id` (FK `user_groups`), except the link tables (`ext_mail_message_transactions`, `ext_auto_budget_limits`).
 - FKs to upstream tables use `ON DELETE CASCADE`.
 - Nullable links to `transaction_groups` and `transaction_journals` use `SET NULL`.
 - Money columns are `decimal(32,12)`, like upstream.
@@ -147,9 +147,11 @@ All tables have `id`, timestamps and `user_group_id` (FK `user_groups`), except 
 | `ext_mail_message_transactions` | `mail_message_id`, `mail_transaction_id`. Primary key on both. |
 | `ext_statements` | `user_id`, `account_id`, `bank`, `parser`, `file_name`, `file_sha256`, `file_path` (encrypted file on the `upload` disk), `statement_date`, `period_start`, `period_end`, `opening_balance`, `closing_balance`, `available_balance` (null), `chain_valid` bool, `status` (`parsed`/`committed`), `options` json, `summary` json. |
 | `ext_statement_lines` | `statement_id` (FK), `posting_index`, `date`, `description`, `amount`, `fee`, `balance`, `card_ref` (null), `line_hash`, `status` (`matched`/`missing`/`created`/`proposal`/`ignored`), `transaction_journal_id` (null), `match_score` (null). Index on `line_hash`. |
+| `ext_auto_budget_limits` | Link table, so no `id` or `user_group_id`: `budget_limit_id` (primary key, FK `budget_limits` `ON DELETE CASCADE`), `source` (`store`/`backfill`). Budget limits that upstream's auto-budget creation made ([01](01-custom-periods.md#auto-budgets-on-custom-periods)). |
 
 Settings that are **not** tables:
-- **Period settings:** user preference `extPeriod`, through the `Preferences` facade.
+- **Period settings:** user preference `extPeriod`, through the `Preferences` facade. Its `auto_budgets` key holds the auto-budget job options.
+- **Auto-budget job status:** user preference `extAutoBudgetStatus` (when the job last ran for the user and what it changed).
 - **Google OAuth client:** `FireflyConfig` keys `ext_google_client_id` and `ext_google_client_secret` (secret encrypted with `Crypt`).
 
 ## Testing
