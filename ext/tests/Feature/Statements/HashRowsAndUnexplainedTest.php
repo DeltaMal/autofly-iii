@@ -1,7 +1,7 @@
 <?php
 
 /*
- * BankChargesAndUnexplainedTest.php
+ * HashRowsAndUnexplainedTest.php
  * Copyright (c) 2026 the ext fork authors. Added for the ext fork of Firefly III
  * (https://github.com/DeltaMal/autofly-iii), based on Firefly III by james@firefly-iii.org.
  *
@@ -41,7 +41,7 @@ use FireflyIII\User;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
- * Bank charges ("#" rows), the unexplained difference and proposal percentages (ext/docs/02).
+ * "#" rows (handled like every other line), the unexplained difference and proposal percentages (ext/docs/02).
  * All values are synthetic.
  *
  * @internal
@@ -49,7 +49,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(Reconciler::class)]
 #[CoversClass(StatementImporter::class)]
 #[CoversClass(StatementController::class)]
-final class BankChargesAndUnexplainedTest extends FeatureTestCase
+final class HashRowsAndUnexplainedTest extends FeatureTestCase
 {
     use StatementTestHelpers;
 
@@ -65,8 +65,37 @@ final class BankChargesAndUnexplainedTest extends FeatureTestCase
         $this->account = $this->createAccount($this->user, 'Synthetic Cheque', 'asset', '62012345678', 'EUR', ['opening_balance' => '1000', 'opening_balance_date' => Carbon::parse('2024-09-19', config('app.timezone'))]);
     }
 
-    public function testAFeeRowIsNeverMatchedToACardTransactionWithTheSameAmount(): void
+    public function testAHashRowWithoutAMatchingJournalIsImportedAsMissingLikeAnyOtherLine(): void
     {
+        $statement = $this->upload($this->user, self::layout([['2025-06-26', '#MONTHLY ACCOUNT FEE', '-202.80']], '797.20'))->statement;
+        $line      = $statement->lines()->first();
+        self::assertSame(StatementLine::MISSING, $line->status);
+        self::assertNull($line->proposal);
+
+        // counterparty and description come from the statement text, as for any other line
+        (new StatementImporter($this->user, app(BankRegistry::class)))->commit($statement);
+        $journal   = TransactionJournal::find($line->refresh()->transaction_journal_id);
+        self::assertSame(StatementLine::CREATED, $line->status);
+        self::assertSame('#MONTHLY ACCOUNT FEE', $journal->description);
+        self::assertSame('#MONTHLY ACCOUNT FEE', $this->opposingName($journal));
+        self::assertSame('Expense account', Transaction::query()->where('transaction_journal_id', $journal->id)->where('amount', '>', 0)->first()->account->accountType->type);
+        self::assertSame(0, Account::query()->where('user_group_id', $this->user->user_group_id)->where('name', 'FNB')->count());
+    }
+
+    public function testAHashRowMatchesAnExistingJournalWithTheSameAmount(): void
+    {
+        // e.g. interest or a payment that failed to come in by email but was booked by hand
+        $journal   = $this->emailTransaction($this->user, $this->account, '2025-06-25', '-6.50', 'Coffee Corner', '1234')->transactionJournals()->first()->id;
+        $statement = $this->upload($this->user, self::layout([['2025-06-26', '#SERVICE FEE', '-6.50']], '993.50'))->statement;
+        $line      = $statement->lines()->first();
+        self::assertSame(StatementLine::MATCHED, $line->status);
+        self::assertSame($journal, $line->transaction_journal_id);
+        self::assertSame([], $statement->summary['firefly_only']);
+    }
+
+    public function testHashRowsUseTheSameScoringAndOneToOneMatching(): void
+    {
+        // one card transaction, two statement lines with its amount: the card line scores higher (card ref, tokens)
         $card      = $this->emailTransaction($this->user, $this->account, '2025-06-26', '-202.80', 'Corner Deli', '1234')->transactionJournals()->first()->id;
         $statement = $this->upload($this->user, self::layout([
             ['2025-06-26', '#MONTHLY ACCOUNT FEE', '-202.80'],
@@ -75,46 +104,18 @@ final class BankChargesAndUnexplainedTest extends FeatureTestCase
         $lines     = $statement->lines()->orderBy('posting_index')->get();
 
         self::assertSame(StatementLine::MISSING, $lines[0]->status);
-        self::assertNull($lines[0]->transaction_journal_id);
         self::assertSame(StatementLine::MATCHED, $lines[1]->status);
         self::assertSame($card, $lines[1]->transaction_journal_id);
-
-        // created with the bank as the counterparty and the statement text as the description
-        (new StatementImporter($this->user, app(BankRegistry::class)))->commit($statement);
-        $journal   = TransactionJournal::find($lines[0]->refresh()->transaction_journal_id);
-        self::assertSame('#MONTHLY ACCOUNT FEE', $journal->description);
-        self::assertSame('FNB', $this->opposingName($journal));
-        self::assertSame('Expense account', Transaction::query()->where('transaction_journal_id', $journal->id)->where('amount', '>', 0)->first()->account->accountType->type);
     }
 
-    public function testAFeeRowWithoutABankChargeIsMissingEvenWhenOnlyACardTransactionFits(): void
+    public function testAHashRowCanBeAProposal(): void
     {
-        $this->emailTransaction($this->user, $this->account, '2025-06-26', '-6.50', 'Coffee Corner', '1234');
-        $statement = $this->upload($this->user, self::layout([['2025-06-26', '#SERVICE FEE', '-6.50']], '993.50'))->statement;
-        self::assertSame(StatementLine::MISSING, $statement->lines()->first()->status);
-        self::assertNull($statement->lines()->first()->proposal); // no proposal against a card transaction either
-        self::assertSame(['Coffee Corner'], array_column($statement->summary['firefly_only'], 'description'));
-    }
-
-    public function testAFeeRowMatchesAJournalBookedAgainstTheBank(): void
-    {
-        $fee       = $this->emailTransaction($this->user, $this->account, '2025-06-26', '-202.80', 'fnb')->transactionJournals()->first()->id;
-        $statement = $this->upload($this->user, self::layout([['2025-06-26', '#MONTHLY ACCOUNT FEE', '-202.80']], '797.20'))->statement;
+        $journal   = $this->emailTransaction($this->user, $this->account, '2025-07-02', '-3.00', 'International Txn Fee')->transactionJournals()->first()->id;
+        $statement = $this->upload($this->user, self::layout([['2025-07-02', '#INTERNATIONAL TXN FEE', '-3.15']], '996.85'))->statement;
         $line      = $statement->lines()->first();
-        self::assertSame(StatementLine::MATCHED, $line->status);
-        self::assertSame($fee, $line->transaction_journal_id);
-    }
-
-    public function testAllFeesLandOnOneBankExpenseAccount(): void
-    {
-        $importer = new StatementImporter($this->user, app(BankRegistry::class));
-        $importer->commit($this->upload($this->user, self::layout([['2025-06-26', '#MONTHLY ACCOUNT FEE', '-202.80']], '797.20', statementDate: '2025-06-30'))->statement);
-        $importer->commit($this->upload($this->user, self::layout([['2025-07-25', '#MONTHLY ACCOUNT FEE', '-202.80'], ['2025-07-02', '#INTERNATIONAL TXN FEE', '-3.15']], '591.25', statementDate: '2025-07-31'))->statement);
-
-        $fees = TransactionJournal::query()->where('description', 'like', '#%')->get();
-        self::assertCount(3, $fees);
-        self::assertSame(['FNB'], array_values(array_unique($fees->map(fn (TransactionJournal $j): string => $this->opposingName($j))->all())));
-        self::assertSame(1, Account::query()->where('user_group_id', $this->user->user_group_id)->where('name', 'FNB')->count());
+        self::assertSame(StatementLine::PROPOSAL, $line->status);
+        self::assertSame($journal, $line->transaction_journal_id);
+        $this->get(route('ext.statements.show', [$statement->id]))->assertOk()->assertSee('+5.0% difference');
     }
 
     public function testTheReviewPageListsTheUnexplainedItemsAndAsks(): void
