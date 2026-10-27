@@ -81,7 +81,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
     public function testThePeriodsPageExplainsAndSavesTheOptions(): void
     {
         $user = $this->cpUser('cp@example.com');
-        Preferences::setForUser($user, 'extPeriod', self::CP + ['starts' => [['date' => '2026-10-23', 'name' => 'Early']]]);
+        Preferences::setForUser($user, 'extPeriod', array_merge(self::CP, ['starts' => [['date' => '2026-10-23', 'name' => 'Early']]]));
 
         $page = $this->get(route('ext.periods.index'))->assertOk();
         foreach (['ab_title', 'ab_intro', 'ab_enabled', 'ab_take_over', 'ab_new_budget_immediate', 'ab_edit_immediate', 'ab_cut_on_leave', 'ab_gap_fill', 'ab_gap_pro_rata', 'ab_never'] as $key) {
