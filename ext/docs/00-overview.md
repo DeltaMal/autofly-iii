@@ -27,7 +27,7 @@ The base is upstream release tag **v6.7.9** (2026-10-11): Laravel 13, PHP ≥ 8.
 | Composer | **No new packages.** `composer.lock` changes upstream all the time, and a new package would conflict on every merge. Gmail is called over plain REST with Guzzle, which is already installed. PDF text comes from poppler `pdftotext -layout`, installed in our Docker image. |
 | Python importer | Keeps running in production until the PHP port reaches parity. The port first runs in **shadow mode** ([04](04-deployment-and-cutover.md)). Then we cut over and retire Python. |
 | Real data | **Never committed.** A fork of a public repo is public. Anything real lives in `ext/tests/fixtures/private/`, which is git-ignored. Committed fixtures are anonymised ([fixtures README](../tests/fixtures/README.md)). |
-| Order of work | Phase 0 (scaffolding) → 1 (periods) → 2 (statements and recon) → 3 (email port) → 4 (cut-over, done by the owner locally). |
+| Order of work | Phase 0 (scaffolding) → 1 (periods) → 2 (statements and recon) → 3 (email port) → 4 (cut-over, done by the owner locally). Owner decisions on the phase PRs' open questions were applied in one follow-up PR and are recorded in 01–04. |
 
 ## Rules for staying mergeable (non-negotiable)
 
@@ -67,6 +67,7 @@ ext/
   src/                     FireflyIII\Ext\...
     ExtServiceProvider.php
     Periods/               PeriodCalendar, ExtNavigation, settings value object
+    Budgets/               auto-budgets on custom periods (ExtCreateAutoBudgetLimits, CustomPeriodAutoBudgets)
     Banks/                 BankDefinition, BankRegistry, AccountResolver, Fnb/...
     Import/                TransactionWriter, ExternalIdLookup, ReconciliationAdjuster
     Statements/            parsers, PdfTextExtractor, Reconciler, models
@@ -159,7 +160,6 @@ Settings that are **not** tables:
 
 ## Out of scope for now
 
-- Auto-budgets on custom periods.
 - A rule action "start a new period when salary arrives".
 - An IMAP provider.
 - More banks and FNB layouts (credit card, savings, CSV export).

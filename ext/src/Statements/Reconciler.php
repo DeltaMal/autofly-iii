@@ -39,7 +39,8 @@ use Illuminate\Support\Facades\DB;
  * - line identity: sha256(account|date|signed amount|balance|normalised description); a line already linked on
  *   an earlier statement of the account keeps its link, so overlapping uploads never create duplicates;
  * - candidates: journals on the account dated line.date-5 .. line.date+2 with exactly the signed amount, not
- *   linked to a line of another statement;
+ *   linked to a line of another statement; a bank charge ("#" row or fee line) only matches a journal that is
+ *   itself a bank charge: created from the same row (its stmt- external id) or booked against the bank;
  * - score: date distance (dominant), + card ref == internal_reference, + token overlap, + email external id;
  * - one-to-one greedy assignment by score, ties by posting index then journal id;
  * - unmatched lines: a "proposal" when a nearby journal with the same card or strong token overlap has a
@@ -55,7 +56,15 @@ final class Reconciler
     public const int REVERSAL_DAYS        = 7;
     public const float STRONG_OVERLAP     = 0.5;
 
-    public function __construct(private readonly Account $account) {}
+    /**
+     * @param ?string $bankName the bank's name (BankDefinition::name()): bank charges are booked against it
+     */
+    public function __construct(private readonly Account $account, private readonly ?string $bankName = null) {}
+
+    public static function externalIdFor(string $lineHash): string
+    {
+        return 'stmt-'.substr($lineHash, 0, 32);
+    }
 
     public static function lineHash(int $accountId, Carbon $date, string $amount, string $balance, string $description): string
     {
@@ -120,6 +129,9 @@ final class Reconciler
                 if ($days < -self::DAYS_BEFORE || $days > self::DAYS_AFTER || 0 !== bccomp($journal['amount'], $line->amount, 2)) {
                     continue;
                 }
+                if ($line->isBankCharge() && !$this->isBankChargeJournal($journal, $hashes[$line->postingIndex])) {
+                    continue; // never a card or EFT transaction that merely has the same amount
+                }
                 $pairs[]  = [$this->score($line, $journal, abs($days)), $line->postingIndex, $journal['id']];
             }
         }
@@ -142,7 +154,7 @@ final class Reconciler
             if (array_key_exists($line->postingIndex, $outcomes)) {
                 continue;
             }
-            $proposal = $line->isFeeLine ? null : $this->proposal($line, $journals, $taken + $linkedIds);
+            $proposal = $line->isBankCharge() ? null : $this->proposal($line, $journals, $taken + $linkedIds);
             if (null !== $proposal) {
                 $taken[$proposal['journal_id']]  = true;
                 $outcomes[$line->postingIndex]   = new LineOutcome($line, $hashes[$line->postingIndex], StatementLineModel::PROPOSAL, $proposal['journal_id'], null, $proposal);
@@ -267,6 +279,34 @@ final class Reconciler
         }
 
         return $result;
+    }
+
+    /**
+     * A journal that is a bank charge for this line: created from the same statement row, or booked against
+     * the bank itself (its opposing account has the bank's name).
+     */
+    private function isBankChargeJournal(array $journal, string $lineHash): bool
+    {
+        if (self::externalIdFor($lineHash) === $journal['external_id']) {
+            return true;
+        }
+
+        return null !== $this->bankName && '' !== trim($this->bankName)
+            && 0 === strcasecmp(trim($journal['opposing']), trim($this->bankName));
+    }
+
+    /**
+     * The relative difference of a proposal, in percent of the Firefly amount, signed (bcmath, 1 decimal).
+     */
+    public static function percentDifference(string $from, string $to): ?string
+    {
+        if (0 === bccomp($from, '0', 2)) {
+            return null;
+        }
+        $percent = bcdiv(bcmul(bcsub(ltrim($to, '-'), ltrim($from, '-'), 4), '100', 4), ltrim($from, '-'), 4);
+        $rounded = bcadd($percent, -1 === bccomp($percent, '0', 4) ? '-0.05' : '0.05', 1);
+
+        return (1 === bccomp($rounded, '0', 1) ? '+' : '').$rounded;
     }
 
     public static function tokens(string $text): array

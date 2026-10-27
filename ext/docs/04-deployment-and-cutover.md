@@ -11,8 +11,15 @@
   - `fireflyiii/base` + the built app.
   - Install `poppler-utils` with the base image's package manager.
   - The entrypoint must still run upstream's migrations and upgrade commands. Our migrations run with them, through `loadMigrationsFrom`.
-- **Tags:** `ghcr.io/deltamal/autofly-iii:<upstream version>-ext.<n>`, e.g. `6.7.9-ext.1`, plus `latest-ext`.
-- **Publishing:** `.github/workflows/ext-image.yml` builds and pushes to GHCR on tags `ext-v*`, and only builds on PRs.
+- **Tags and publishing:** `.github/workflows/ext-image.yml` pushes to GHCR (`ghcr.io/deltamal/autofly-iii`):
+
+  | Trigger | Tags pushed |
+  |---|---|
+  | Every push to `ext`, whatever paths changed | `ext` (moving) and `ext-<first 12 of the commit sha>` |
+  | Tag `ext-v<upstream version>-ext.<n>`, e.g. `ext-v6.7.9-ext.1` | `6.7.9-ext.1` and `latest-ext` |
+  | PR into `ext` touching image inputs (Docker files, composer/npm files, assets) | nothing: build only |
+
+  Production pins a release tag (`6.7.9-ext.N`). The `ext` tags are for the dev stack and for trying a merged change before a release is cut.
 - **CI:** `.github/workflows/ext-ci.yml` runs on PRs to `ext`:
   - `composer install` (dev);
   - `vendor/bin/phpunit -c ext/phpunit.xml`;
@@ -27,6 +34,7 @@
   - `db`: MariaDB LTS in a named volume `ff3-ext-dev_db`;
   - `ext-scheduler`: same image, `php artisan schedule:work`, same environment.
 - Uses its own `.env` (`ext/docker/.env.dev`, git-ignored; ship an `.env.dev.example`).
+- Sets `NGINX_LISTEN_IP_PROTOCOL=ipv4`, because cloud sandboxes have no IPv6 and nginx won't start listening on `[::]` there.
 - **Never** points at the production database or volumes.
 - Seed for manual testing:
   - an owner user;

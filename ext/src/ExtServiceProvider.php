@@ -26,12 +26,14 @@ declare(strict_types=1);
 namespace FireflyIII\Ext;
 
 use FireflyIII\Ext\Banks\BankRegistry;
+use FireflyIII\Ext\Budgets\ExtCreateAutoBudgetLimits;
 use FireflyIII\Ext\Console\DevSeed;
 use FireflyIII\Ext\Console\ImportPythonConfig;
 use FireflyIII\Ext\Console\PollMail;
 use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodSettings;
+use FireflyIII\Jobs\CreateAutoBudgetLimits;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Kernel;
@@ -51,6 +53,11 @@ final class ExtServiceProvider extends ServiceProvider
 
         // Phase 1: custom periods. Registered after FireflyServiceProvider, so this binding wins.
         $this->app->bind('navigation', static fn (): ExtNavigation => new ExtNavigation());
+        // Monthly auto-budgets on custom periods. Upstream's AutoBudgetCronjob resolves the job with app().
+        $this->app->bind(
+            CreateAutoBudgetLimits::class,
+            static fn ($app, array $parameters): ExtCreateAutoBudgetLimits => new ExtCreateAutoBudgetLimits($parameters[0] ?? $parameters['date'] ?? null)
+        );
 
         // Phase 2: banks
         $this->app->singleton(BankRegistry::class, static fn (): BankRegistry => BankRegistry::fromConfig((array) config('ext.banks', [])));

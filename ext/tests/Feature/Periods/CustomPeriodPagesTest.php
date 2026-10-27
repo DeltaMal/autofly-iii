@@ -178,6 +178,19 @@ final class CustomPeriodPagesTest extends FeatureTestCase
         self::assertSame([], Preferences::get('extPeriod')->data['starts']);
     }
 
+    public function testManualModeWithoutStartsWarnsAboutCalendarMonths(): void
+    {
+        $warning = 'Manual mode has no period starts yet, so periods fall back to calendar months.';
+        Preferences::set('extPeriod', ['anchor_day' => null, 'business_day_rule' => 'none', 'label' => 'range', 'starts' => []]);
+        $this->get(route('ext.periods.index'))->assertOk()->assertSee($warning)->assertSee('1 Oct – 31 Oct 2026');
+
+        Preferences::set('extPeriod', ['anchor_day' => null, 'business_day_rule' => 'none', 'label' => 'range', 'starts' => [['date' => '2026-10-23']]]);
+        $this->get(route('ext.periods.index'))->assertOk()->assertDontSee($warning);
+
+        Preferences::set('extPeriod', ['anchor_day' => 25, 'business_day_rule' => 'none', 'label' => 'range', 'starts' => []]);
+        $this->get(route('ext.periods.index'))->assertOk()->assertDontSee($warning);
+    }
+
     public function testNonCustomUsersAreUntouched(): void
     {
         Preferences::set('viewRange', '1M');

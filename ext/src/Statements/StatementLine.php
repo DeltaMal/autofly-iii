@@ -45,4 +45,18 @@ final readonly class StatementLine
         public string $raw,
         public bool $isFeeLine = false,
     ) {}
+
+    /**
+     * A charge by the bank itself: a service-fee line, or a row whose description starts with "#" (FNB writes
+     * its own fees that way, e.g. "#MONTHLY ACCOUNT FEE"; email alerts never mention them).
+     */
+    public function isBankCharge(): bool
+    {
+        return $this->isFeeLine || self::isBankChargeDescription($this->description);
+    }
+
+    public static function isBankChargeDescription(string $description): bool
+    {
+        return str_starts_with(ltrim($description), '#');
+    }
 }

@@ -10,6 +10,9 @@ x-firefly: &firefly
     dockerfile: ext/docker/Dockerfile
   image: ff3-ext-dev:local
   env_file: .env.dev
+  environment:
+    # Cloud sandboxes have no IPv6, so nginx must listen on IPv4 only or it fails to start.
+    NGINX_LISTEN_IP_PROTOCOL: ipv4
   volumes:
     - upload:/var/www/html/storage/upload
   depends_on:

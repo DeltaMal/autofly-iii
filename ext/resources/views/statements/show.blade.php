@@ -37,7 +37,7 @@
                             <li>{{ __('ext::statements.result_created', ['count' => count((array) ($statement->summary['created_journals'] ?? []))]) }}</li>
                             <li>{{ __('ext::statements.result_reconciled', ['count' => (int) ($statement->summary['reconciled'] ?? 0)]) }}</li>
                             @if(null !== ($statement->summary['adjustment_group'] ?? null))
-                                <li><a href="{{ route('transactions.show', [$statement->summary['adjustment_group']]) }}">{{ __('ext::statements.result_adjustment') }}</a></li>
+                                <li><a href="{{ route('transactions.show', [$statement->summary['adjustment_group']]) }}">{{ __('ext::statements.unexplained_was_booked') }}: {{ $statement->summary['unexplained']['amount'] ?? '' }}</a></li>
                             @endif
                         </ul>
                         @if(null !== $importTag)
@@ -46,6 +46,65 @@
                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('accounts.reconcile', [$statement->account_id, $statement->period_start->format('Y-m-d'), $statement->statement_date->format('Y-m-d')]) }}">{{ __('ext::statements.view_reconcile') }}</a>
                     </div>
                 </div>
+            </div>
+        @endif
+    </div>
+
+    @php($remaining = $unexplained['remaining'])
+    @php($hasRemaining = 0 !== bccomp($remaining, '0', 2))
+    <div class="card mb-3" id="ext-unexplained">
+        <div class="card-header">
+            <h3 class="card-title">{{ __('ext::statements.unexplained') }}</h3>
+        </div>
+        <div class="card-body p-0">
+            <p class="small text-muted px-3 pt-2 mb-2">{{ __('ext::statements.unexplained_help') }}</p>
+            <table class="table table-sm mb-0">
+                <tbody>
+                @foreach($unexplained['items'] as $item)
+                    <tr>
+                        <td>{{ __('ext::statements.unexplained_kind_'.$item['kind']) }}</td>
+                        <td>{{ $item['date'] }}</td>
+                        <td>
+                            @if(null !== $item['group_id'])
+                                <a href="{{ route('transactions.show', [$item['group_id']]) }}">{{ $item['description'] }}</a>
+                                @if('firefly_only' === $item['kind'])
+                                    · <a href="{{ route('transactions.edit', [$item['group_id']]) }}">{{ __('firefly.edit') }}</a>
+                                @endif
+                            @else
+                                {{ $item['description'] }}
+                            @endif
+                            @if('proposal' === $item['kind'] && isset($item['from'], $item['to']))
+                                <small class="text-muted">{{ __('ext::statements.unexplained_proposal_amounts', ['from' => $item['from'], 'to' => $item['to']]) }}</small>
+                            @endif
+                        </td>
+                        <td class="text-end">{{ $item['amount'] }}</td>
+                    </tr>
+                @endforeach
+                <tr class="fw-bold @if($hasRemaining) table-warning @else table-success @endif">
+                    <td colspan="3">{{ __('ext::statements.unexplained_remaining') }}</td>
+                    <td class="text-end" id="ext-unexplained-remaining">{{ $remaining }}</td>
+                </tr>
+                </tbody>
+            </table>
+            @if(!$hasRemaining && 0 === count($unexplained['items']))
+                <p class="text-muted px-3 py-2 mb-0">{{ __('ext::statements.unexplained_none') }}</p>
+            @endif
+        </div>
+        @if($committed && $hasRemaining)
+            <div class="card-footer">
+                <p class="fw-bold mb-1">{{ __('ext::statements.unexplained_question', ['amount' => $remaining]) }}</p>
+                <p class="small text-muted mb-2">{{ __('ext::statements.unexplained_question_help') }}</p>
+                @if('no' === $decision)
+                    <p class="small mb-2">{{ __('ext::statements.unexplained_was_declined') }}</p>
+                @endif
+                <form method="post" action="{{ route('ext.statements.unexplained', [$statement->id]) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="amount" value="{{ $remaining }}"/>
+                    <button type="submit" name="answer" value="yes" class="btn btn-warning btn-sm">{{ __('ext::statements.unexplained_yes') }}</button>
+                    @if('no' !== $decision)
+                        <button type="submit" name="answer" value="no" class="btn btn-outline-secondary btn-sm">{{ __('ext::statements.unexplained_no') }}</button>
+                    @endif
+                </form>
             </div>
         @endif
     </div>
@@ -106,6 +165,20 @@
             </div>
             @if(!$committed)
                 <div class="card-footer">
+                    @if($hasRemaining)
+                        <fieldset class="mb-2" id="ext-unexplained-question">
+                            <legend class="fs-6 fw-bold mb-1">{{ __('ext::statements.unexplained_question', ['amount' => $remaining]) }}</legend>
+                            <p class="small text-muted mb-1">{{ __('ext::statements.unexplained_question_help') }} {{ __('ext::statements.unexplained_question_commit') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="book_unexplained" id="ext_book_yes" value="{{ $remaining }}" required>
+                                <label class="form-check-label" for="ext_book_yes">{{ __('ext::statements.unexplained_yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="book_unexplained" id="ext_book_no" value="no" required>
+                                <label class="form-check-label" for="ext_book_no">{{ __('ext::statements.unexplained_no') }}</label>
+                            </div>
+                        </fieldset>
+                    @endif
                     <button type="submit" class="btn btn-success"><em class="bi bi-check2-all"></em> {{ __('ext::statements.commit') }}</button>
                 </div>
             @endif

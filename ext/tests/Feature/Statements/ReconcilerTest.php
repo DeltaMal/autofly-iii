@@ -217,16 +217,25 @@ final class ReconcilerTest extends FeatureTestCase
         self::assertNotNull($review->notice);
     }
 
-    public function testAdjustmentBooksTheUnexplainedDifference(): void
+    public function testTheUnexplainedDifferenceIsOnlyBookedWhenTheUserSaysYes(): void
     {
-        // Firefly has 1000, the bank says 1100 after one fee: 300 is unexplained
-        $statement = $this->upload($this->user, self::layout([['2025-06-26', '#MONTHLY ACCOUNT FEE', '-200.00']], '1100.00'), options: ['adjust' => true])->statement;
+        // Firefly has 1000, the bank says 1100 after one fee: 300 is unexplained. Neither commit nor auto-commit books it.
+        $outcome   = $this->upload($this->user, self::layout([['2025-06-26', '#MONTHLY ACCOUNT FEE', '-200.00']], '1100.00'), options: ['auto_commit' => true, 'adjust' => true]);
+        self::assertSame(UploadOutcome::COMMITTED, $outcome->kind);
+        $statement = $outcome->statement;
+        self::assertNull($statement->summary['adjustment_group']);
         self::assertSame('300.00', $statement->summary['breakdown']['unexplained']);
-        $statement = (new StatementImporter($this->user, app(\FireflyIII\Ext\Banks\BankRegistry::class)))->commit($statement);
+        self::assertSame(0, TransactionJournal::query()->whereHas('transactionType', static fn ($q) => $q->where('type', 'Reconciliation'))->count());
 
-        self::assertNotNull($statement->summary['adjustment_group']);
+        $importer  = new StatementImporter($this->user, app(\FireflyIII\Ext\Banks\BankRegistry::class));
+        $group     = $importer->bookUnexplained($statement, '300.00');
+        $statement->refresh();
+        self::assertSame($group->id, $statement->summary['adjustment_group']);
         self::assertSame('0.00', $statement->summary['breakdown']['unexplained']);
-        $journal   = TransactionJournal::with('transactionType')->where('transaction_group_id', $statement->summary['adjustment_group'])->first();
+        $journal   = TransactionJournal::with('transactionType', 'categories')->where('transaction_group_id', $group->id)->first();
         self::assertSame('Reconciliation', $journal->transactionType->type);
+        self::assertSame(['Unexplained'], $journal->categories->pluck('name')->all());
+        // bank minus Firefly is positive, so the money comes into the account
+        self::assertSame('300.00', bcadd((string) Transaction::query()->where('transaction_journal_id', $journal->id)->where('account_id', $this->account->id)->value('amount'), '0', 2));
     }
 }

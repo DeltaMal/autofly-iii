@@ -1,9 +1,12 @@
-# Builds the ext image. Pushes to GHCR on tags ext-v* (e.g. ext-v6.7.9-ext.1 -> 6.7.9-ext.1 + latest-ext);
-# on pull requests it only builds.
+# Builds the ext image and pushes it to GHCR:
+#   - every push to the ext branch, whatever changed -> :ext and :ext-<sha12>
+#   - tags ext-v* (e.g. ext-v6.7.9-ext.1)            -> :6.7.9-ext.1 and :latest-ext
+# Pull requests only build (and only when image inputs changed).
 name: ext-image
 
 on:
   push:
+    branches: [ext]
     tags: ['ext-v*']
   pull_request:
     branches: [ext, 'ext-phase-*']
@@ -39,6 +42,10 @@ jobs:
             echo "tags=${IMAGE}:${version},${IMAGE}:latest-ext" >> "$GITHUB_OUTPUT"
             echo "version=${version}" >> "$GITHUB_OUTPUT"
             echo "push=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_EVENT_NAME}" == push && "${GITHUB_REF}" == refs/heads/ext ]]; then
+            echo "tags=${IMAGE}:ext,${IMAGE}:ext-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "version=ext-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "push=true" >> "$GITHUB_OUTPUT"
           else
             echo "tags=${IMAGE}:pr-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
             echo "version=pr-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
@@ -56,7 +63,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build (and push on tags)
+      - name: Build (and push on ext and tags)
         uses: docker/build-push-action@v6
         with:
           context: .
