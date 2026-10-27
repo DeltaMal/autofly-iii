@@ -25,7 +25,9 @@ declare(strict_types=1);
 
 namespace FireflyIII\Ext\Tests\Feature;
 
+use FireflyIII\Models\Account;
 use FireflyIII\Models\GroupMembership;
+use FireflyIII\Repositories\Account\AccountRepositoryInterface;
 use FireflyIII\Models\UserGroup;
 use FireflyIII\Models\UserRole;
 use FireflyIII\User;
@@ -61,5 +63,26 @@ abstract class FeatureTestCase extends BaseTestCase
         GroupMembership::create(['user_id' => $user->id, 'user_group_id' => $group->id, 'user_role_id' => $role->id]);
 
         return $user;
+    }
+
+    /**
+     * An account through upstream's repository (so meta data like the currency and account number are set).
+     */
+    protected function createAccount(User $user, string $name, string $type = 'asset', ?string $accountNumber = null, string $currency = 'EUR', array $extra = []): Account
+    {
+        /** @var AccountRepositoryInterface $repository */
+        $repository = app(AccountRepositoryInterface::class);
+        $repository->setUser($user);
+
+        return $repository->store(array_merge([
+            'name'              => $name,
+            'account_type_name' => $type,
+            'account_role'      => 'asset' === $type ? 'defaultAsset' : null,
+            'currency_code'     => $currency,
+            'iban'              => null,
+            'account_number'    => $accountNumber,
+            'active'            => true,
+            'virtual_balance'   => '',
+        ], $extra));
     }
 }

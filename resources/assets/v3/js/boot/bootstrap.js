@@ -58,6 +58,7 @@ const preferences = await getVariables([
     "locale",
     "language",
     "convert_to_primary",
+    "extPeriod", // CUSTOM(ext)
 ]);
 
 const range = getViewRange(preferences.viewRange, new Date());

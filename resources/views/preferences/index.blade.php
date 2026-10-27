@@ -346,6 +346,7 @@
                                                 {{ __('firefly.pref_last365') }}
                                             </label>
                                         </div>
+                                        @includeIf('ext::preferences.view-range') {{-- CUSTOM(ext) --}}
                                     </div>
                                 </div>
                             </div>
