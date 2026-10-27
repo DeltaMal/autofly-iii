@@ -34,6 +34,7 @@ Route::group(
         Route::get('periods', ['uses' => 'PeriodController@index', 'as' => 'periods.index']);
         Route::post('periods/close', ['uses' => 'PeriodController@close', 'as' => 'periods.close']);
         Route::post('periods/starts/delete', ['uses' => 'PeriodController@deleteStart', 'as' => 'periods.starts.delete']);
+        Route::post('periods/auto-budgets', ['uses' => 'PeriodController@autoBudgets', 'as' => 'periods.auto-budgets']);
 
         // Phase 2: statements and auto-recon
         Route::get('statements', ['uses' => 'StatementController@index', 'as' => 'statements.index']);
