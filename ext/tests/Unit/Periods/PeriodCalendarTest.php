@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace FireflyIII\Ext\Tests\Unit\Periods;
 
 use Carbon\Carbon;
+use FireflyIII\Ext\Budgets\AutoBudgetOptions;
 use FireflyIII\Ext\Periods\PeriodCalendar;
 use FireflyIII\Ext\Periods\PeriodSettings;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -120,7 +121,7 @@ final class PeriodCalendarTest extends TestCase
     {
         self::assertSame(PeriodSettings::defaults()->toArray(), PeriodSettings::fromArray('garbage')->toArray());
         $settings = PeriodSettings::fromArray(['anchor_day' => 99, 'business_day_rule' => 'x', 'label' => 'y', 'starts' => [['date' => '2026-02-30'], ['date' => '2026-10-23', 'name' => ' Early ']]]);
-        self::assertSame(['anchor_day' => 25, 'business_day_rule' => 'none', 'label' => 'range', 'starts' => [['date' => '2026-10-23', 'name' => 'Early']]], $settings->toArray());
+        self::assertSame(['anchor_day' => 25, 'business_day_rule' => 'none', 'label' => 'range', 'starts' => [['date' => '2026-10-23', 'name' => 'Early']], 'auto_budgets' => AutoBudgetOptions::defaults()->toArray()], $settings->toArray());
         self::assertNull(PeriodSettings::fromArray(['anchor_day' => null])->anchorDay);
     }
 
