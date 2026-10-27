@@ -1,0 +1,1958 @@
+{
+  "generator": "ff3_email_importer scripts/export_golden.py",
+  "generated_at": "2026-10-27T10:32:06+00:00",
+  "timezone": "Africa/Johannesburg",
+  "bank_config": {
+    "tags": [
+      "fnb"
+    ],
+    "currency": "ZAR",
+    "require_authenticated": true
+  },
+  "auth_pass_header": "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za",
+  "normalise_line": [
+    {
+      "input": "  a  b  ",
+      "output": "a b"
+    },
+    {
+      "input": "• FNB :-) R1.00",
+      "output": "FNB :-) R1.00"
+    },
+    {
+      "input": "x   ​  　﻿y",
+      "output": "x y"
+    },
+    {
+      "input": "tab\there\rcr\fff\u000bvt",
+      "output": "tab here cr ff vt"
+    },
+    {
+      "input": "● bullet · dot",
+      "output": "bullet dot"
+    },
+    {
+      "input": "smile ☺ 🙂 😊 😀 end",
+      "output": "smile :-) :-) :-) :-) end"
+    },
+    {
+      "input": "no change",
+      "output": "no change"
+    },
+    {
+      "input": "",
+      "output": ""
+    }
+  ],
+  "html_to_text": [
+    {
+      "input": "<html><head><title>T</title><style>p{}</style></head><body><script>var x=1;</script><table><tr><td>Dear valued customer</td></tr><tr><td>&bull; FNB :-) R1.00 paid to cheq a/c..123456 @ X. Ref.Y.&nbsp; 4Oct 12:59<br>Please do NOT reply</td></tr></table><ul><li>one</li><li>two</li></ul><div>a<span> b </span>c</div><p>para</p><h3>head</h3></body></html>",
+      "output": "Dear valued customer\nFNB :-) R1.00 paid to cheq a/c..123456 @ X. Ref.Y. 4Oct 12:59\nPlease do NOT reply\none\ntwo\na b c\npara\nhead"
+    },
+    {
+      "input": "<p>Dear valued customer<br>• FNB Transaction declined due to Temporary Block on card ending 9064. Logon to Online/APP to update. Std Network rates apply. FNB a Div of FRB Ltd</p>\n",
+      "output": "Dear valued customer\nFNB Transaction declined due to Temporary Block on card ending 9064. Logon to Online/APP to update. Std Network rates apply. FNB a Div of FRB Ltd"
+    },
+    {
+      "input": "<html><body><p>Dear valued customer<br><br>&bull;&nbsp;FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. &nbsp;29Apr 08:20<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></body></html>",
+      "output": "Dear valued customer\nFNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+    },
+    {
+      "input": "<html><body><table><tr><td><img src=\"cid:logo.png\"></td></tr><tr><td><p>Dear valued customer<br><br>• FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></td></tr><tr><td><img src=\"cid:banner.png\"></td></tr></table></body></html>",
+      "output": "Dear valued customer\nFNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+    },
+    {
+      "input": "<p>Dear valued customer<br>• FNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52</p>\n",
+      "output": "Dear valued customer\nFNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52"
+    },
+    {
+      "input": "<html><body><p>Dear valued customer<br><br>• FNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant one 54244471. 2Jun 00:00<br>• FNB:-) R263.30 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant Two 54785137. 2Jun 00:00<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></body></html>\n",
+      "output": "Dear valued customer\nFNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant one 54244471. 2Jun 00:00\nFNB:-) R263.30 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant Two 54785137. 2Jun 00:00\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+    }
+  ],
+  "split_notifications": [
+    {
+      "input": "FNB :-) R1.00 paid to cheq a/c..1 @ X. Ref.Y. 4Oct 12:59 Please do NOT reply",
+      "output": [
+        "R1.00 paid to cheq a/c..1 @ X. Ref.Y. 4Oct 12:59"
+      ]
+    }
+  ],
+  "sender_authenticated": [
+    {
+      "header": "mx.google.com; dkim=pass header.i=@fnb.co.za",
+      "expected": true
+    },
+    {
+      "header": "mx.google.com; spf=pass smtp.mailfrom=bounce@mail.fnb.co.za",
+      "expected": true
+    },
+    {
+      "header": "mx.google.com; dmarc=pass header.from=fnb.co.za",
+      "expected": true
+    },
+    {
+      "header": "mx.google.com; dkim=pass header.i=@notfnb.co.za",
+      "expected": false
+    },
+    {
+      "header": "mx.google.com; dkim=pass header.i=@fnb.co.za.evil.example",
+      "expected": false
+    },
+    {
+      "header": "mx.google.com; spf=softfail smtp.mailfrom=inContact@fnb.co.za",
+      "expected": false
+    },
+    {
+      "header": "mx.google.com; DKIM=PASS header.i=@FNB.CO.ZA",
+      "expected": true
+    }
+  ],
+  "infer_datetime": [
+    {
+      "day": 4,
+      "month": "Oct",
+      "time": "12:59",
+      "received_at": "2026-10-04T11:00:00+00:00",
+      "expected": "2026-10-04T12:59:00+02:00"
+    },
+    {
+      "day": 31,
+      "month": "Dec",
+      "time": "23:58",
+      "received_at": "2027-01-01T06:00:00+00:00",
+      "expected": "2026-12-31T23:58:00+02:00"
+    },
+    {
+      "day": 1,
+      "month": "Jan",
+      "time": "07:30",
+      "received_at": "2027-01-01T06:00:00+00:00",
+      "expected": "2027-01-01T07:30:00+02:00"
+    },
+    {
+      "day": 6,
+      "month": "Oct",
+      "time": "10:00",
+      "received_at": "2026-10-04T11:00:00+00:00",
+      "expected": "2025-10-06T10:00:00+02:00"
+    },
+    {
+      "day": 5,
+      "month": "Oct",
+      "time": "12:00",
+      "received_at": "2026-10-04T11:00:00+00:00",
+      "expected": "2026-10-05T12:00:00+02:00"
+    },
+    {
+      "day": 29,
+      "month": "Feb",
+      "time": "10:00",
+      "received_at": "2025-03-01T08:00:00+00:00",
+      "expected": "2024-02-29T10:00:00+02:00"
+    },
+    {
+      "day": 29,
+      "month": "Feb",
+      "time": "10:00",
+      "received_at": "2024-03-01T08:00:00+00:00",
+      "expected": "2024-02-29T10:00:00+02:00"
+    },
+    {
+      "day": 4,
+      "month": "OCTOBER",
+      "time": "9:05",
+      "received_at": "2026-10-04T11:00:00+00:00",
+      "expected": "2026-10-04T09:05:00+02:00"
+    },
+    {
+      "day": 30,
+      "month": "Feb",
+      "time": "10:00",
+      "received_at": "2026-03-01T08:00:00+00:00",
+      "expected_error": true
+    },
+    {
+      "day": 4,
+      "month": "Xyz",
+      "time": "10:00",
+      "received_at": "2026-10-04T11:00:00+00:00",
+      "expected_error": true
+    }
+  ],
+  "messages": [
+    {
+      "name": "eml:declined.eml",
+      "parts": {
+        "html": "<p>Dear valued customer<br>• FNB Transaction declined due to Temporary Block on card ending 9064. Logon to Online/APP to update. Std Network rates apply. FNB a Div of FRB Ltd</p>\n"
+      },
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "declined",
+        "received_at": "2026-06-06T01:05:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB Transaction declined",
+        "auth_results": [
+          "mx.google.com;       dkim=pass header.i=@fnb.co.za header.s=selector1 header.b=DeCl1n3d;       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB Transaction declined due to Temporary Block on card ending 9064. Logon to Online/APP to update. Std Network rates apply. FNB a Div of FRB Ltd"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "ignored",
+        "transactions": [],
+        "ignored": [
+          "Dear valued customer\nFNB Transaction declined due to Temporary Block on card ending 9064. Logon to Online/APP to update. Std Network rates apply. FNB a Div of FRB Ltd"
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eml:paid_to_alternative.eml",
+      "parts": {
+        "html": "<html><body><p>Dear valued customer<br><br>&bull;&nbsp;FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. &nbsp;29Apr 08:20<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></body></html>",
+        "plain": "Dear valued customer\n\n• FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking.\nRef.City Dental Rooms. 29Apr 08:20\n\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+      },
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "paid_to_alternative",
+        "received_at": "2026-04-29T07:32:44+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+        "auth_results": [
+          "mx.google.com;       dkim=pass header.i=@fnb.co.za header.s=selector1 header.b=QwErTy55;       spf=pass (google.com: domain of incontact@fnb.co.za designates 196.11.240.10 as permitted sender) smtp.mailfrom=inContact@fnb.co.za;       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20\nPlease do NOT reply to this message as it is sent from an unattended mailbox.",
+          "Dear valued customer\nFNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking.\nRef.City Dental Rooms. 29Apr 08:20\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-78eb657f8d62d0008260e0ccf13e50d8",
+            "bank_id": "fnb",
+            "rule": "paid_to",
+            "kind": "deposit",
+            "amount": "66038.05",
+            "currency": "ZAR",
+            "occurred_at": "2026-04-29T08:20:00+02:00",
+            "description": "City Dental Rooms",
+            "counterparty": "City Dental Rooms",
+            "account_ref": "190611",
+            "card_ref": null,
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-received"
+            ],
+            "raw_text": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+            "mailbox_id": "personal",
+            "message_id": "paid_to_alternative",
+            "subject": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+            "received_at": "2026-04-29T07:32:44+00:00",
+            "counter_account_ref": null,
+            "account_label": "Current ..190611",
+            "signed_amount": "66038.05"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eml:reserved_purchase.eml",
+      "parts": {
+        "html": "<html><body><table><tr><td><img src=\"cid:logo.png\"></td></tr><tr><td><p>Dear valued customer<br><br>• FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></td></tr><tr><td><img src=\"cid:banner.png\"></td></tr></table></body></html>"
+      },
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "reserved_purchase",
+        "received_at": "2026-10-04T10:59:31+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. 4Oct 12:56",
+        "auth_results": [
+          "mx.google.com;       dkim=pass header.i=@fnb.co.za header.s=selector1 header.b=AbCdEf12;       spf=pass (google.com: domain of incontact@fnb.co.za designates 196.11.240.10 as permitted sender) smtp.mailfrom=inContact@fnb.co.za;       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-2b76db0f0c6a49e71a1d3e7a4ad141de",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "767.98",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T12:56:00+02:00",
+            "description": "Corner Deli",
+            "counterparty": "Corner Deli",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "88884",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "mailbox_id": "personal",
+            "message_id": "reserved_purchase",
+            "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. 4Oct 12:56",
+            "received_at": "2026-10-04T10:59:31+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-767.98"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eml:spoofed_sender.eml",
+      "parts": {
+        "html": "<p>Dear valued customer<br>• FNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52</p>\n"
+      },
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "spoofed_sender",
+        "received_at": "2026-10-04T09:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52",
+        "auth_results": [
+          "mx.google.com;       spf=fail (google.com: domain of incontact@fnb.co.za does not designate 203.0.113.9 as permitted sender) smtp.mailfrom=inContact@fnb.co.za;       dmarc=fail (p=REJECT sp=REJECT dis=QUARANTINE) header.from=fnb.co.za",
+          "mx.google.com;       dkim=pass header.i=@fnb.co.za;       spf=pass smtp.mailfrom=inContact@fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": false,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-4515f341c2d81b14ade07b3b2ead12b8",
+            "bank_id": "fnb",
+            "rule": "paid_to",
+            "kind": "deposit",
+            "amount": "1010.24",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T09:52:00+02:00",
+            "description": "Groceries",
+            "counterparty": "Groceries",
+            "account_ref": "103439",
+            "card_ref": null,
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-received"
+            ],
+            "raw_text": "FNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52",
+            "mailbox_id": "personal",
+            "message_id": "spoofed_sender",
+            "subject": "FNB :-) R1010.24 paid to cheq a/c..103439 @ Smartapp. Ref.Groceries. 4Oct 09:52",
+            "received_at": "2026-10-04T09:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..103439",
+            "signed_amount": "1010.24"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eml:two_bullets_eft.eml",
+      "parts": {
+        "html": "<html><body><p>Dear valued customer<br><br>• FNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant one 54244471. 2Jun 00:00<br>• FNB:-) R263.30 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant Two 54785137. 2Jun 00:00<br><br>Please do NOT reply to this message as it is sent from an unattended mailbox.</p></body></html>\n"
+      },
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "two_bullets_eft",
+        "received_at": "2026-06-02T05:12:09+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Ref.Merchant one 54244471. 2Jun 00:00",
+        "auth_results": [
+          "mx.google.com;       dkim=pass header.i=@fnb.co.za header.s=selector1 header.b=XyZ98765;       spf=pass (google.com: domain of incontact@fnb.co.za designates 196.11.240.10 as permitted sender) smtp.mailfrom=inContact@fnb.co.za;       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant one 54244471. 2Jun 00:00\nFNB:-) R263.30 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant Two 54785137. 2Jun 00:00\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-52d1e5dcb5a6f9126f2713c8d4a0c9f2",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "87.13",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Merchant one 54244471",
+            "counterparty": "Merchant one 54244471",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "82578",
+            "tags": [
+              "fnb",
+              "fnb-payment",
+              "fnb-eft"
+            ],
+            "raw_text": "FNB :-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant one 54244471. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "two_bullets_eft",
+            "subject": "FNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Ref.Merchant one 54244471. 2Jun 00:00",
+            "received_at": "2026-06-02T05:12:09+00:00",
+            "counter_account_ref": null,
+            "account_label": "Premier ..379711",
+            "signed_amount": "-87.13"
+          },
+          {
+            "external_id": "fnb-0ec96c0d040c85714582a8de35edeef4",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "263.30",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Merchant Two 54785137",
+            "counterparty": "Merchant Two 54785137",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "82578",
+            "tags": [
+              "fnb",
+              "fnb-payment",
+              "fnb-eft"
+            ],
+            "raw_text": "FNB :-) R263.30 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Merchant Two 54785137. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "two_bullets_eft",
+            "subject": "FNB:-) R87.13 paid from Premier a/c..379711 @ Eft. Ref.Merchant one 54244471. 2Jun 00:00",
+            "received_at": "2026-06-02T05:12:09+00:00",
+            "counter_account_ref": null,
+            "account_label": "Premier ..379711",
+            "signed_amount": "-263.30"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "user_sample",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-2b76db0f0c6a49e71a1d3e7a4ad141de",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "767.98",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T12:56:00+02:00",
+            "description": "Corner Deli",
+            "counterparty": "Corner Deli",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "88884",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-767.98"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reserved_double_space",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R925.03 reserved for purchase @ Fuel Stop Central Bouleva from FNB card a/c..597355 using card..4038. Avail R15237.  2Apr 11:13",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R925.03 reserved for purchase @ Fuel Stop Central Bouleva from FNB card a/c..597355 using card..4038. Avail R15237. 2Apr 11:13\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-9de7c256770b7b2d82c7981b293b2aaf",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "925.03",
+            "currency": "ZAR",
+            "occurred_at": "2026-04-02T11:13:00+02:00",
+            "description": "Fuel Stop Central Bouleva",
+            "counterparty": "Fuel Stop Central Bouleva",
+            "account_ref": "597355",
+            "card_ref": "4038",
+            "balance_after": "15237",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R925.03 reserved for purchase @ Fuel Stop Central Bouleva from FNB card a/c..597355 using card..4038. Avail R15237. 2Apr 11:13",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R925.03 reserved for purchase @ Fuel Stop Central Bouleva from FNB card a/c..597355 using card..4038. Avail R15237.  2Apr 11:13",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..597355",
+            "signed_amount": "-925.03"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reserved_no_merchant",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R519.35 reserved for purchase from FNB card a/c..922630 using card..1037. Avail R8290. 23Jun 07:11",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R519.35 reserved for purchase from FNB card a/c..922630 using card..1037. Avail R8290. 23Jun 07:11\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-02562b28e4a4ec1f9c917549f98001fa",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "519.35",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-23T07:11:00+02:00",
+            "description": "Card purchase",
+            "counterparty": "Card purchase",
+            "account_ref": "922630",
+            "card_ref": "1037",
+            "balance_after": "8290",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R519.35 reserved for purchase from FNB card a/c..922630 using card..1037. Avail R8290. 23Jun 07:11",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R519.35 reserved for purchase from FNB card a/c..922630 using card..1037. Avail R8290. 23Jun 07:11",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..922630",
+            "signed_amount": "-519.35"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reserved_merchant_comma_dot",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R6829.83 reserved for purchase @ Acme Tools, Inc. from Current a/c..190611 using card..2309. Avail R8409694. 7Jun 16:19",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R6829.83 reserved for purchase @ Acme Tools, Inc. from Current a/c..190611 using card..2309. Avail R8409694. 7Jun 16:19\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-14bae1dc6e55b25d95bb59429145da36",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "6829.83",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-07T16:19:00+02:00",
+            "description": "Acme Tools, Inc.",
+            "counterparty": "Acme Tools, Inc.",
+            "account_ref": "190611",
+            "card_ref": "2309",
+            "balance_after": "8409694",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R6829.83 reserved for purchase @ Acme Tools, Inc. from Current a/c..190611 using card..2309. Avail R8409694. 7Jun 16:19",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R6829.83 reserved for purchase @ Acme Tools, Inc. from Current a/c..190611 using card..2309. Avail R8409694. 7Jun 16:19",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Current ..190611",
+            "signed_amount": "-6829.83"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reserved_merchant_star",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R99433.02 reserved for purchase @ Abc*webhost from Current a/c..190611 using card..2309. Avail R1092583. 7Jun 10:58",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R99433.02 reserved for purchase @ Abc*webhost from Current a/c..190611 using card..2309. Avail R1092583. 7Jun 10:58\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-8e607dee6dbcf2cdcd279f57669228a4",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "99433.02",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-07T10:58:00+02:00",
+            "description": "Abc*webhost",
+            "counterparty": "Abc*webhost",
+            "account_ref": "190611",
+            "card_ref": "2309",
+            "balance_after": "1092583",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R99433.02 reserved for purchase @ Abc*webhost from Current a/c..190611 using card..2309. Avail R1092583. 7Jun 10:58",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R99433.02 reserved for purchase @ Abc*webhost from Current a/c..190611 using card..2309. Avail R1092583. 7Jun 10:58",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Current ..190611",
+            "signed_amount": "-99433.02"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reserved_merchant_at",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R965.88 reserved for purchase @ The Cafe@mall from FNB card a/c..597355 using card..1480. Avail R29477. 27Mar 19:17",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R965.88 reserved for purchase @ The Cafe@mall from FNB card a/c..597355 using card..1480. Avail R29477. 27Mar 19:17\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-943263cfc6153c4da1154eec0030d583",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "965.88",
+            "currency": "ZAR",
+            "occurred_at": "2026-03-27T19:17:00+02:00",
+            "description": "The Cafe@mall",
+            "counterparty": "The Cafe@mall",
+            "account_ref": "597355",
+            "card_ref": "1480",
+            "balance_after": "29477",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R965.88 reserved for purchase @ The Cafe@mall from FNB card a/c..597355 using card..1480. Avail R29477. 27Mar 19:17",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R965.88 reserved for purchase @ The Cafe@mall from FNB card a/c..597355 using card..1480. Avail R29477. 27Mar 19:17",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..597355",
+            "signed_amount": "-965.88"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "reversal_no_avail",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) REVERSAL of R980.94 for goods purchased from FNB card a/c..597355 using card..4038.  4May 17:23",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) REVERSAL of R980.94 for goods purchased from FNB card a/c..597355 using card..4038. 4May 17:23\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-26c9ebf864abdeada7a893a0520188ff",
+            "bank_id": "fnb",
+            "rule": "card_reversal",
+            "kind": "deposit",
+            "amount": "980.94",
+            "currency": "ZAR",
+            "occurred_at": "2026-05-04T17:23:00+02:00",
+            "description": "Card reversal",
+            "counterparty": "Card reversal",
+            "account_ref": "597355",
+            "card_ref": "4038",
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-reversal"
+            ],
+            "raw_text": "FNB :-) REVERSAL of R980.94 for goods purchased from FNB card a/c..597355 using card..4038. 4May 17:23",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) REVERSAL of R980.94 for goods purchased from FNB card a/c..597355 using card..4038.  4May 17:23",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..597355",
+            "signed_amount": "980.94"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "paid_from_ref",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R356.64 paid from cheq a/c..379711 @ Smartapp. Avail R3248. Ref.Electricity 123. 3Jan 16:22",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R356.64 paid from cheq a/c..379711 @ Smartapp. Avail R3248. Ref.Electricity 123. 3Jan 16:22\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-f44f50bff63902745c37b41245170c37",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "356.64",
+            "currency": "ZAR",
+            "occurred_at": "2026-01-03T16:22:00+02:00",
+            "description": "Electricity 123",
+            "counterparty": "Electricity 123",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "3248",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R356.64 paid from cheq a/c..379711 @ Smartapp. Avail R3248. Ref.Electricity 123. 3Jan 16:22",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R356.64 paid from cheq a/c..379711 @ Smartapp. Avail R3248. Ref.Electricity 123. 3Jan 16:22",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-356.64"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "paid_to_no_avail",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-78eb657f8d62d0008260e0ccf13e50d8",
+            "bank_id": "fnb",
+            "rule": "paid_to",
+            "kind": "deposit",
+            "amount": "66038.05",
+            "currency": "ZAR",
+            "occurred_at": "2026-04-29T08:20:00+02:00",
+            "description": "City Dental Rooms",
+            "counterparty": "City Dental Rooms",
+            "account_ref": "190611",
+            "card_ref": null,
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-received"
+            ],
+            "raw_text": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R66038.05 paid to Current a/c..190611 @ Online Banking. Ref.City Dental Rooms. 29Apr 08:20",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Current ..190611",
+            "signed_amount": "66038.05"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "paid_from_smart_account",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R1055.43 paid from Smart Account..744316 @ Smartapp. Avail R477. Ref.Rent. 1Oct 09:10",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R1055.43 paid from Smart Account..744316 @ Smartapp. Avail R477. Ref.Rent. 1Oct 09:10\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-a4b1edd404d0cc63734a127aa13b22d9",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "1055.43",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-01T09:10:00+02:00",
+            "description": "Rent",
+            "counterparty": "Rent",
+            "account_ref": "744316",
+            "card_ref": null,
+            "balance_after": "477",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R1055.43 paid from Smart Account..744316 @ Smartapp. Avail R477. Ref.Rent. 1Oct 09:10",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R1055.43 paid from Smart Account..744316 @ Smartapp. Avail R477. Ref.Rent. 1Oct 09:10",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Smart Account ..744316",
+            "signed_amount": "-1055.43"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "thousands_commas",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R8,143.35 reserved for purchase @ Makro from FNB card a/c..110149 using card..7805. Avail R98,079. 4Oct 09:14",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R8,143.35 reserved for purchase @ Makro from FNB card a/c..110149 using card..7805. Avail R98,079. 4Oct 09:14\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-5e6d7dc4d5798f694590ac034bd88b03",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "8143.35",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T09:14:00+02:00",
+            "description": "Makro",
+            "counterparty": "Makro",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "98079",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R8,143.35 reserved for purchase @ Makro from FNB card a/c..110149 using card..7805. Avail R98,079. 4Oct 09:14",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R8,143.35 reserved for purchase @ Makro from FNB card a/c..110149 using card..7805. Avail R98,079. 4Oct 09:14",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-8143.35"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "identical_twice",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00\nFNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-c0b8bf5a263b2d3524478033ad2148ca",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "50.59",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Gym",
+            "counterparty": "Gym",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "731",
+            "tags": [
+              "fnb",
+              "fnb-payment",
+              "fnb-eft"
+            ],
+            "raw_text": "FNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-50.59"
+          },
+          {
+            "external_id": "fnb-6992a49b6401f8e801dba4a317be0aff",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "50.59",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Gym",
+            "counterparty": "Gym",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "731",
+            "tags": [
+              "fnb",
+              "fnb-payment",
+              "fnb-eft"
+            ],
+            "raw_text": "FNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R50.59 paid from cheq a/c..379711 @ Eft. Avail R731. Ref.Gym. 2Jun 00:00",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-50.59"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "atm_is_unmatched",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56\nFNB :-) R50.59 withdrawn from cheq a/c..379711 using card..5528 @ ATM. Avail R25721. 20Jun 01:58\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "unmatched",
+        "transactions": [
+          {
+            "external_id": "fnb-2b76db0f0c6a49e71a1d3e7a4ad141de",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "767.98",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T12:56:00+02:00",
+            "description": "Corner Deli",
+            "counterparty": "Corner Deli",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "88884",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-767.98"
+          }
+        ],
+        "ignored": [],
+        "unmatched": [
+          "R50.59 withdrawn from cheq a/c..379711 using card..5528 @ ATM. Avail R25721. 20Jun 01:58"
+        ]
+      }
+    },
+    {
+      "name": "electricity_token_ignored",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) CITY OF SPRINGFIELD. Elec Amt: R839.31. Vat Amt: R78.45. Meter: 94060181130. Credit Token: 2875-7241-5522-5627-3532. Units: 25.8kWh.",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) CITY OF SPRINGFIELD. Elec Amt: R839.31. Vat Amt: R78.45. Meter: 94060181130. Credit Token: 2875-7241-5522-5627-3532. Units: 25.8kWh.\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "ignored",
+        "transactions": [],
+        "ignored": [
+          "CITY OF SPRINGFIELD. Elec Amt: R839.31. Vat Amt: R78.45. Meter: 94060181130. Credit Token: 2875-7241-5522-5627-3532. Units: 25.8kWh."
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "payment_link_ignored",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) Payment Link created from Fusion Private a/c..896016 To A Person..388816 @ Smartapp. 10Sep 18:06",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) Payment Link created from Fusion Private a/c..896016 To A Person..388816 @ Smartapp. 10Sep 18:06\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "ignored",
+        "transactions": [],
+        "ignored": [
+          "Payment Link created from Fusion Private a/c..896016 To A Person..388816 @ Smartapp. 10Sep 18:06"
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "transfer_own_accounts",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R6422.90 t/fer from Savings Account..432588 to Fusion Private a/c..896016 @ Smartapp. Avail R1248. 14Sep 12:35",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R6422.90 t/fer from Savings Account..432588 to Fusion Private a/c..896016 @ Smartapp. Avail R1248. 14Sep 12:35\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-a9caeef890bf97cb28728cc4f1b4133e",
+            "bank_id": "fnb",
+            "rule": "transfer",
+            "kind": "transfer",
+            "amount": "6422.90",
+            "currency": "ZAR",
+            "occurred_at": "2026-09-14T12:35:00+02:00",
+            "description": "Transfer from Savings Account ..432588 to Fusion Private ..896016",
+            "counterparty": "Fusion Private ..896016",
+            "account_ref": "432588",
+            "card_ref": null,
+            "balance_after": "1248",
+            "tags": [
+              "fnb",
+              "fnb-transfer"
+            ],
+            "raw_text": "FNB :-) R6422.90 t/fer from Savings Account..432588 to Fusion Private a/c..896016 @ Smartapp. Avail R1248. 14Sep 12:35",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R6422.90 t/fer from Savings Account..432588 to Fusion Private a/c..896016 @ Smartapp. Avail R1248. 14Sep 12:35",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": "896016",
+            "account_label": "Savings Account ..432588",
+            "signed_amount": "-6422.90"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "transfer_to_home_loan",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R3538.43 t/fer from Fusion Private a/c..896016 to home loan a/c..069063 @ Online Banking. Avail R29547. 26Sep 14:08",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R3538.43 t/fer from Fusion Private a/c..896016 to home loan a/c..069063 @ Online Banking. Avail R29547. 26Sep 14:08\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-4e0d59bc90652e4a9b0c18b0fd81f501",
+            "bank_id": "fnb",
+            "rule": "transfer",
+            "kind": "transfer",
+            "amount": "3538.43",
+            "currency": "ZAR",
+            "occurred_at": "2026-09-26T14:08:00+02:00",
+            "description": "Transfer from Fusion Private ..896016 to home loan ..069063",
+            "counterparty": "home loan ..069063",
+            "account_ref": "896016",
+            "card_ref": null,
+            "balance_after": "29547",
+            "tags": [
+              "fnb",
+              "fnb-transfer"
+            ],
+            "raw_text": "FNB :-) R3538.43 t/fer from Fusion Private a/c..896016 to home loan a/c..069063 @ Online Banking. Avail R29547. 26Sep 14:08",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R3538.43 t/fer from Fusion Private a/c..896016 to home loan a/c..069063 @ Online Banking. Avail R29547. 26Sep 14:08",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": "069063",
+            "account_label": "Fusion Private ..896016",
+            "signed_amount": "-3538.43"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "unicode_upper_counterparty",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R57.60 reserved for purchase @ Straße Café from FNB card a/c..110149 using card..7805. Avail R98. 4Oct 12:56",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R57.60 reserved for purchase @ Straße Café from FNB card a/c..110149 using card..7805. Avail R98. 4Oct 12:56\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-a027792d1a9ec126025e3ddf0da863b6",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "57.60",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T12:56:00+02:00",
+            "description": "Straße Café",
+            "counterparty": "Straße Café",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "98",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R57.60 reserved for purchase @ Straße Café from FNB card a/c..110149 using card..7805. Avail R98. 4Oct 12:56",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R57.60 reserved for purchase @ Straße Café from FNB card a/c..110149 using card..7805. Avail R98. 4Oct 12:56",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-57.60"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "avail_leading_zero",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R0100. Ref.Coffee. 4Oct 09:14",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R0100. Ref.Coffee. 4Oct 09:14\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-7f4ce65d964ca9a5b386de8da251a05b",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "8.88",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T09:14:00+02:00",
+            "description": "Coffee",
+            "counterparty": "Coffee",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "100",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R0100. Ref.Coffee. 4Oct 09:14",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R0100. Ref.Coffee. 4Oct 09:14",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-8.88"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "avail_negative_with_cents",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R-8,721.50. Ref.Coffee. 4Oct 09:04",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R-8,721.50. Ref.Coffee. 4Oct 09:04\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-a9abd9d678f44ae9f0c49bb0d35f4ef3",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "8.88",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T09:04:00+02:00",
+            "description": "Coffee",
+            "counterparty": "Coffee",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "-8721.50",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R-8,721.50. Ref.Coffee. 4Oct 09:04",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R-8,721.50. Ref.Coffee. 4Oct 09:04",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-8.88"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eft_paid_from_gets_eft_tag",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Gym. 2Jun 00:00",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Gym. 2Jun 00:00\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-e449a3e49244c8a56662ccc5f01c928e",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "87.13",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Gym",
+            "counterparty": "Gym",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "82578",
+            "tags": [
+              "fnb",
+              "fnb-payment",
+              "fnb-eft"
+            ],
+            "raw_text": "FNB :-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Gym. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R87.13 paid from Premier a/c..379711 @ Eft. Avail R82578. Ref.Gym. 2Jun 00:00",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Premier ..379711",
+            "signed_amount": "-87.13"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "eft_paid_to_no_eft_tag",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R87.13 paid to Premier a/c..379711 @ Eft. Ref.Refund. 2Jun 00:00",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R87.13 paid to Premier a/c..379711 @ Eft. Ref.Refund. 2Jun 00:00\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-eba8915e0229f01c87de1385862398e0",
+            "bank_id": "fnb",
+            "rule": "paid_to",
+            "kind": "deposit",
+            "amount": "87.13",
+            "currency": "ZAR",
+            "occurred_at": "2026-06-02T00:00:00+02:00",
+            "description": "Refund",
+            "counterparty": "Refund",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-received"
+            ],
+            "raw_text": "FNB :-) R87.13 paid to Premier a/c..379711 @ Eft. Ref.Refund. 2Jun 00:00",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R87.13 paid to Premier a/c..379711 @ Eft. Ref.Refund. 2Jun 00:00",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Premier ..379711",
+            "signed_amount": "87.13"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "impossible_date_unmatched",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 30Feb 09:10",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 30Feb 09:10\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "unmatched",
+        "transactions": [],
+        "ignored": [],
+        "unmatched": [
+          "R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 30Feb 09:10"
+        ]
+      }
+    },
+    {
+      "name": "december_received_in_january",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2027-01-01T06:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 31Dec 22:45",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 31Dec 22:45\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-a8f092492bd53fa62fe36892b9dfcf70",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "8.88",
+            "currency": "ZAR",
+            "occurred_at": "2026-12-31T22:45:00+02:00",
+            "description": "X",
+            "counterparty": "X",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "98",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 31Dec 22:45",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R8.88 paid from cheq a/c..379711 @ Smartapp. Avail R98. Ref.X. 31Dec 22:45",
+            "received_at": "2027-01-01T06:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-8.88"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "salary_no_space_prefix",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB:-) R10026.17 paid to Fusion Private a/c..896016 @ Eft. Ref.Monthly Salary. 24Sep 00:00"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-875a9efa993cc260aba893516568e332",
+            "bank_id": "fnb",
+            "rule": "paid_to",
+            "kind": "deposit",
+            "amount": "10026.17",
+            "currency": "ZAR",
+            "occurred_at": "2026-09-24T00:00:00+02:00",
+            "description": "Monthly Salary",
+            "counterparty": "Monthly Salary",
+            "account_ref": "896016",
+            "card_ref": null,
+            "balance_after": null,
+            "tags": [
+              "fnb",
+              "fnb-received"
+            ],
+            "raw_text": "FNB :-) R10026.17 paid to Fusion Private a/c..896016 @ Eft. Ref.Monthly Salary. 24Sep 00:00",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "Fusion Private ..896016",
+            "signed_amount": "10026.17"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "no_notification_unmatched",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Your statement is ready"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "unmatched",
+        "transactions": [],
+        "ignored": [],
+        "unmatched": [
+          "Your statement is ready"
+        ]
+      }
+    },
+    {
+      "name": "declined_body_ignored",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "FNB Transaction declined\nYour card purchase was declined"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "ignored",
+        "transactions": [],
+        "ignored": [
+          "FNB Transaction declined\nYour card purchase was declined"
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "emoji_smiley_and_bullets",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R27.52 paid from cheq a/c..379711 @ Smartapp. Avail R740. Ref.Taxi. 5Oct 06:28\nFNB:) R25.69 paid from cheq a/c..379711 @ Smartapp. Avail R604. Ref.Bus. 5Oct 06:25 Please do NOT reply"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-9a5ea2bc54d89aed8fc27800a833d8b0",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "27.52",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-05T06:28:00+02:00",
+            "description": "Taxi",
+            "counterparty": "Taxi",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "740",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R27.52 paid from cheq a/c..379711 @ Smartapp. Avail R740. Ref.Taxi. 5Oct 06:28",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-27.52"
+          },
+          {
+            "external_id": "fnb-0a0dc96ddd0bed1eb2f123a970bd66bd",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "25.69",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-05T06:25:00+02:00",
+            "description": "Bus",
+            "counterparty": "Bus",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "604",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R25.69 paid from cheq a/c..379711 @ Smartapp. Avail R604. Ref.Bus. 5Oct 06:25",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-25.69"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "multiline_notification",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "incontact@fnb.co.za",
+        "subject": "",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R44.80 paid from cheq a/c..379711 @ Smartapp.\nAvail R521. Ref.Lunch. 5Oct 11:06\nPlease do NOT reply"
+        ]
+      },
+      "expected": {
+        "matches": true,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-d96d9349a107c65e5cd5dc60e8b322b9",
+            "bank_id": "fnb",
+            "rule": "paid_from",
+            "kind": "withdrawal",
+            "amount": "44.80",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-05T11:06:00+02:00",
+            "description": "Lunch",
+            "counterparty": "Lunch",
+            "account_ref": "379711",
+            "card_ref": null,
+            "balance_after": "521",
+            "tags": [
+              "fnb",
+              "fnb-payment"
+            ],
+            "raw_text": "FNB :-) R44.80 paid from cheq a/c..379711 @ Smartapp. Avail R521. Ref.Lunch. 5Oct 11:06",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "cheq ..379711",
+            "signed_amount": "-44.80"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "sender_mismatch",
+      "message": {
+        "mailbox_id": "personal",
+        "message_id": "msg-1",
+        "received_at": "2026-10-04T11:00:00+00:00",
+        "sender": "someone@example.com",
+        "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+        "auth_results": [
+          "mx.google.com; dkim=pass header.i=@fnb.co.za header.s=s1; spf=pass smtp.mailfrom=inContact@fnb.co.za; dmarc=pass header.from=fnb.co.za"
+        ],
+        "bodies": [
+          "Dear valued customer\nFNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56\nPlease do NOT reply to this message as it is sent from an unattended mailbox."
+        ]
+      },
+      "expected": {
+        "matches": false,
+        "is_authentic": true,
+        "is_authentic_without_check": true,
+        "outcome": "transactions",
+        "transactions": [
+          {
+            "external_id": "fnb-2b76db0f0c6a49e71a1d3e7a4ad141de",
+            "bank_id": "fnb",
+            "rule": "card_reserved",
+            "kind": "withdrawal",
+            "amount": "767.98",
+            "currency": "ZAR",
+            "occurred_at": "2026-10-04T12:56:00+02:00",
+            "description": "Corner Deli",
+            "counterparty": "Corner Deli",
+            "account_ref": "110149",
+            "card_ref": "7805",
+            "balance_after": "88884",
+            "tags": [
+              "fnb",
+              "fnb-reserved"
+            ],
+            "raw_text": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "mailbox_id": "personal",
+            "message_id": "msg-1",
+            "subject": "FNB :-) R767.98 reserved for purchase @ Corner Deli from FNB card a/c..110149 using card..7805. Avail R88884. 4Oct 12:56",
+            "received_at": "2026-10-04T11:00:00+00:00",
+            "counter_account_ref": null,
+            "account_label": "FNB card ..110149",
+            "signed_amount": "-767.98"
+          }
+        ],
+        "ignored": [],
+        "unmatched": []
+      }
+    }
+  ]
+}

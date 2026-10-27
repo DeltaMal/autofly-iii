@@ -1,0 +1,5 @@
+# Real financial samples, tokens and exports stay on the owner's machine.
+tests/fixtures/private/
+docker/.env.dev
+*.token.json
+ext-import.json

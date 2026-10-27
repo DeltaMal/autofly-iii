@@ -1,0 +1,556 @@
+{
+  "periods": [
+    {
+      "name": "salary 25th, after anchor",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-27",
+      "start": "2026-10-25",
+      "end": "2026-11-24",
+      "label": "25 Oct – 24 Nov 2026",
+      "previous": [
+        "2026-09-25",
+        "2026-10-24"
+      ],
+      "next": [
+        "2026-11-25",
+        "2026-12-24"
+      ]
+    },
+    {
+      "name": "salary 25th, day before anchor",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-24",
+      "start": "2026-09-25",
+      "end": "2026-10-24",
+      "label": "25 Sep – 24 Oct 2026",
+      "previous": [
+        "2026-08-25",
+        "2026-09-24"
+      ],
+      "next": [
+        "2026-10-25",
+        "2026-11-24"
+      ]
+    },
+    {
+      "name": "salary 25th, on anchor",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-25",
+      "start": "2026-10-25",
+      "end": "2026-11-24",
+      "label": "25 Oct – 24 Nov 2026",
+      "previous": [
+        "2026-09-25",
+        "2026-10-24"
+      ],
+      "next": [
+        "2026-11-25",
+        "2026-12-24"
+      ]
+    },
+    {
+      "name": "salary 25th, across year end",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2027-01-03",
+      "start": "2026-12-25",
+      "end": "2027-01-24",
+      "label": "25 Dec 2026 – 24 Jan 2027",
+      "previous": [
+        "2026-11-25",
+        "2026-12-24"
+      ],
+      "next": [
+        "2027-01-25",
+        "2027-02-24"
+      ]
+    },
+    {
+      "name": "salary 25th, previous business day",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "previous",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-24",
+      "start": "2026-10-23",
+      "end": "2026-11-24",
+      "label": "23 Oct – 24 Nov 2026",
+      "previous": [
+        "2026-09-25",
+        "2026-10-22"
+      ],
+      "next": [
+        "2026-11-25",
+        "2026-12-24"
+      ]
+    },
+    {
+      "name": "salary 25th, previous business day (2027-09)",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "previous",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2027-09-24",
+      "start": "2027-09-24",
+      "end": "2027-10-24",
+      "label": "24 Sep – 24 Oct 2027",
+      "previous": [
+        "2027-08-25",
+        "2027-09-23"
+      ],
+      "next": [
+        "2027-10-25",
+        "2027-11-24"
+      ]
+    },
+    {
+      "name": "salary 25th, next business day",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "next",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-25",
+      "start": "2026-09-25",
+      "end": "2026-10-25",
+      "label": "25 Sep – 25 Oct 2026",
+      "previous": [
+        "2026-08-25",
+        "2026-09-24"
+      ],
+      "next": [
+        "2026-10-26",
+        "2026-11-24"
+      ]
+    },
+    {
+      "name": "month end anchor 31 in February",
+      "settings": {
+        "anchor_day": 31,
+        "business_day_rule": "none",
+        "label": "end_month",
+        "starts": []
+      },
+      "date": "2027-02-15",
+      "start": "2027-01-31",
+      "end": "2027-02-27",
+      "label": "February 2027",
+      "previous": [
+        "2026-12-31",
+        "2027-01-30"
+      ],
+      "next": [
+        "2027-02-28",
+        "2027-03-30"
+      ]
+    },
+    {
+      "name": "month end anchor 31 in leap February",
+      "settings": {
+        "anchor_day": 31,
+        "business_day_rule": "none",
+        "label": "end_month",
+        "starts": []
+      },
+      "date": "2028-02-29",
+      "start": "2028-02-29",
+      "end": "2028-03-30",
+      "label": "March 2028",
+      "previous": [
+        "2028-01-31",
+        "2028-02-28"
+      ],
+      "next": [
+        "2028-03-31",
+        "2028-04-29"
+      ]
+    },
+    {
+      "name": "explicit early start replaces computed 25th",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-10-23",
+            "name": "Oct salary (early)"
+          }
+        ]
+      },
+      "date": "2026-10-23",
+      "start": "2026-10-23",
+      "end": "2026-11-24",
+      "label": "Oct salary (early)",
+      "previous": [
+        "2026-09-25",
+        "2026-10-22"
+      ],
+      "next": [
+        "2026-11-25",
+        "2026-12-24"
+      ]
+    },
+    {
+      "name": "period before the early start",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-10-23",
+            "name": "Oct salary (early)"
+          }
+        ]
+      },
+      "date": "2026-10-22",
+      "start": "2026-09-25",
+      "end": "2026-10-22",
+      "label": "25 Sep – 22 Oct 2026",
+      "previous": [
+        "2026-08-25",
+        "2026-09-24"
+      ],
+      "next": [
+        "2026-10-23",
+        "2026-11-24"
+      ]
+    },
+    {
+      "name": "two explicit starts near one computed start split",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-10-20"
+          },
+          {
+            "date": "2026-10-28"
+          }
+        ]
+      },
+      "date": "2026-10-25",
+      "start": "2026-10-20",
+      "end": "2026-10-27",
+      "label": "20 Oct – 27 Oct 2026",
+      "previous": [
+        "2026-09-25",
+        "2026-10-19"
+      ],
+      "next": [
+        "2026-10-28",
+        "2026-11-24"
+      ]
+    },
+    {
+      "name": "two explicit starts, first part",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-10-20"
+          },
+          {
+            "date": "2026-10-28"
+          }
+        ]
+      },
+      "date": "2026-10-21",
+      "start": "2026-10-20",
+      "end": "2026-10-27",
+      "label": "20 Oct – 27 Oct 2026",
+      "previous": [
+        "2026-09-25",
+        "2026-10-19"
+      ],
+      "next": [
+        "2026-10-28",
+        "2026-11-24"
+      ]
+    },
+    {
+      "name": "manual: before first start uses calendar month",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-01-10"
+          },
+          {
+            "date": "2026-02-20"
+          },
+          {
+            "date": "2026-03-15"
+          }
+        ]
+      },
+      "date": "2026-01-05",
+      "start": "2026-01-01",
+      "end": "2026-01-09",
+      "label": "1 Jan – 9 Jan 2026",
+      "previous": [
+        "2025-12-01",
+        "2025-12-31"
+      ],
+      "next": [
+        "2026-01-10",
+        "2026-02-19"
+      ]
+    },
+    {
+      "name": "manual: between explicit starts",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-01-10"
+          },
+          {
+            "date": "2026-02-20"
+          },
+          {
+            "date": "2026-03-15"
+          }
+        ]
+      },
+      "date": "2026-02-25",
+      "start": "2026-02-20",
+      "end": "2026-03-14",
+      "label": "20 Feb – 14 Mar 2026",
+      "previous": [
+        "2026-01-10",
+        "2026-02-19"
+      ],
+      "next": [
+        "2026-03-15",
+        "2026-04-06"
+      ]
+    },
+    {
+      "name": "manual: projected after last start",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-01-10"
+          },
+          {
+            "date": "2026-02-20"
+          },
+          {
+            "date": "2026-03-15"
+          }
+        ]
+      },
+      "date": "2026-04-01",
+      "start": "2026-03-15",
+      "end": "2026-04-06",
+      "label": "15 Mar – 6 Apr 2026",
+      "previous": [
+        "2026-02-20",
+        "2026-03-14"
+      ],
+      "next": [
+        "2026-04-07",
+        "2026-04-29"
+      ]
+    },
+    {
+      "name": "manual: projected twice",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-01-10"
+          },
+          {
+            "date": "2026-02-20"
+          },
+          {
+            "date": "2026-03-15"
+          }
+        ]
+      },
+      "date": "2026-04-10",
+      "start": "2026-04-07",
+      "end": "2026-04-29",
+      "label": "7 Apr – 29 Apr 2026",
+      "previous": [
+        "2026-03-15",
+        "2026-04-06"
+      ],
+      "next": [
+        "2026-04-30",
+        "2026-05-22"
+      ]
+    },
+    {
+      "name": "manual single start: monthly anniversaries (clamped)",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-01-31"
+          }
+        ]
+      },
+      "date": "2026-03-05",
+      "start": "2026-02-28",
+      "end": "2026-03-30",
+      "label": "28 Feb – 30 Mar 2026",
+      "previous": [
+        "2026-01-31",
+        "2026-02-27"
+      ],
+      "next": [
+        "2026-03-31",
+        "2026-04-29"
+      ]
+    },
+    {
+      "name": "manual with no starts: calendar months",
+      "settings": {
+        "anchor_day": null,
+        "business_day_rule": "none",
+        "label": "start_month",
+        "starts": []
+      },
+      "date": "2026-10-27",
+      "start": "2026-10-01",
+      "end": "2026-10-31",
+      "label": "October 2026",
+      "previous": [
+        "2026-09-01",
+        "2026-09-30"
+      ],
+      "next": [
+        "2026-11-01",
+        "2026-11-30"
+      ]
+    }
+  ],
+  "moves": [
+    {
+      "name": "next from a period start",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-25",
+      "skip": 0,
+      "direction": "add",
+      "expected": "2026-11-25"
+    },
+    {
+      "name": "next keeps day offset",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-30",
+      "skip": 0,
+      "direction": "add",
+      "expected": "2026-11-30"
+    },
+    {
+      "name": "skip one period",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-25",
+      "skip": 1,
+      "direction": "add",
+      "expected": "2026-12-25"
+    },
+    {
+      "name": "previous from a period start",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2026-10-25",
+      "skip": 0,
+      "direction": "subtract",
+      "expected": "2026-09-25"
+    },
+    {
+      "name": "previous across year end",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": []
+      },
+      "date": "2027-01-03",
+      "skip": 0,
+      "direction": "subtract",
+      "expected": "2026-12-04"
+    },
+    {
+      "name": "next clamps offset to a shorter period",
+      "settings": {
+        "anchor_day": 25,
+        "business_day_rule": "none",
+        "label": "range",
+        "starts": [
+          {
+            "date": "2026-10-23",
+            "name": "Oct salary (early)"
+          }
+        ]
+      },
+      "date": "2026-09-24",
+      "skip": 0,
+      "direction": "add",
+      "expected": "2026-10-22"
+    }
+  ]
+}

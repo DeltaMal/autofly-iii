@@ -1,0 +1,552 @@
+{
+  "account_number": "62012345678",
+  "statement_date": "2025-07-14",
+  "available_balance": "11968.15",
+  "closing_balance": "12480.55",
+  "opening_balance": "10019.49",
+  "sum_of_amounts": "2461.06",
+  "line_count": 60,
+  "chain_valid": true,
+  "lines": [
+    {
+      "posting_index": 0,
+      "date": "2025-07-14",
+      "description": "TENOKALUMIMAGOSIV",
+      "fee": "0.00",
+      "amount": "-5680.00",
+      "balance": "12480.55",
+      "card_ref": null
+    },
+    {
+      "posting_index": 1,
+      "date": "2025-07-14",
+      "description": "TEHULUVOPIBIG",
+      "fee": "0.00",
+      "amount": "-3600.00",
+      "balance": "18160.55",
+      "card_ref": null
+    },
+    {
+      "posting_index": 2,
+      "date": "2025-07-14",
+      "description": "GOPILO",
+      "fee": "0.00",
+      "amount": "-10579.10",
+      "balance": "21760.55",
+      "card_ref": null
+    },
+    {
+      "posting_index": 3,
+      "date": "2025-07-14",
+      "description": "VOWASIZOZOSIT",
+      "fee": "0.00",
+      "amount": "-110.00",
+      "balance": "32339.65",
+      "card_ref": null
+    },
+    {
+      "posting_index": 4,
+      "date": "2025-07-14",
+      "description": "ZOWAVO",
+      "fee": "0.00",
+      "amount": "-142.00",
+      "balance": "32449.65",
+      "card_ref": null
+    },
+    {
+      "posting_index": 5,
+      "date": "2025-07-14",
+      "description": "CREDITCARDSETTLE",
+      "fee": "0.00",
+      "amount": "-66771.08",
+      "balance": "32591.65",
+      "card_ref": null
+    },
+    {
+      "posting_index": 6,
+      "date": "2025-07-12",
+      "description": "Warev Gojiyeb",
+      "fee": "0.00",
+      "amount": "105779.24",
+      "balance": "99362.73",
+      "card_ref": null
+    },
+    {
+      "posting_index": 7,
+      "date": "2025-07-11",
+      "description": "PURCH PnP God Fehulo 400000******1234",
+      "fee": "0.00",
+      "amount": "-74.77",
+      "balance": "-6416.51",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 8,
+      "date": "2025-07-10",
+      "description": "PURCH SASOL SADALOVO PIVO 400000******1234",
+      "fee": "0.00",
+      "amount": "-552.00",
+      "balance": "-6341.74",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 9,
+      "date": "2025-07-10",
+      "description": "PURCH Vodacom Bundles 400000******1234",
+      "fee": "0.00",
+      "amount": "-39.44",
+      "balance": "-5789.74",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 10,
+      "date": "2025-07-10",
+      "description": "FNB APP TRANSFER FROM MASARUREKADA",
+      "fee": "0.00",
+      "amount": "78.00",
+      "balance": "-5750.30",
+      "card_ref": null
+    },
+    {
+      "posting_index": 11,
+      "date": "2025-07-08",
+      "description": "PURCH Dischem Nobinetu Go 400000******1234",
+      "fee": "0.00",
+      "amount": "-457.93",
+      "balance": "-5828.30",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 12,
+      "date": "2025-07-08",
+      "description": "PURCH Checkers Mife Rupi 400000******1234",
+      "fee": "0.00",
+      "amount": "-151.17",
+      "balance": "-5370.37",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 13,
+      "date": "2025-07-07",
+      "description": "PURCH Checkers Yenem Sigo 400000******1234",
+      "fee": "0.00",
+      "amount": "-1853.17",
+      "balance": "-5219.20",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 14,
+      "date": "2025-07-07",
+      "description": "PURCH MCD Zoloyeno (6366) 400000******1234",
+      "fee": "0.00",
+      "amount": "-108.98",
+      "balance": "-3366.03",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 15,
+      "date": "2025-07-08",
+      "description": "KATURUHUJ VOPIG",
+      "fee": "0.00",
+      "amount": "-373.50",
+      "balance": "-3257.05",
+      "card_ref": null
+    },
+    {
+      "posting_index": 16,
+      "date": "2025-07-08",
+      "description": "FNB APP TRANSFER FROM TULUSAYESIKORUYE",
+      "fee": "0.00",
+      "amount": "696.00",
+      "balance": "-2883.55",
+      "card_ref": null
+    },
+    {
+      "posting_index": 17,
+      "date": "2025-07-03",
+      "description": "PURCH SASOL SADALOVO PIVO 400000******1234",
+      "fee": "0.00",
+      "amount": "-525.15",
+      "balance": "-3579.55",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 18,
+      "date": "2025-07-03",
+      "description": "PURCH PnP God Fehulo 400000******1234",
+      "fee": "0.00",
+      "amount": "-208.58",
+      "balance": "-3054.40",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 19,
+      "date": "2025-07-03",
+      "description": "PURCH PICK N PAY FEFESI 400000******1234",
+      "fee": "0.00",
+      "amount": "-40.20",
+      "balance": "-2845.82",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 20,
+      "date": "2025-07-02",
+      "description": "PURCH NEKALU TETEJIS GONO 400000******1234",
+      "fee": "0.00",
+      "amount": "-7.04",
+      "balance": "-2805.62",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 21,
+      "date": "2025-07-01",
+      "description": "PURCH SI KOSARE RUPI 400000******1234",
+      "fee": "0.00",
+      "amount": "-2380.00",
+      "balance": "-2798.58",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 22,
+      "date": "2025-07-01",
+      "description": "PURCH PILUNEG GOHUH MILUD 400000******1234",
+      "fee": "0.00",
+      "amount": "-362.50",
+      "balance": "-418.58",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 23,
+      "date": "2025-07-01",
+      "description": "PURCH PnP Zoy Kavobidakak 400000******1234",
+      "fee": "0.00",
+      "amount": "-60.80",
+      "balance": "-56.08",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 24,
+      "date": "2025-07-01",
+      "description": "PURCH HUMARENO PIVO LOKOM 400000******1234",
+      "fee": "0.00",
+      "amount": "-12.30",
+      "balance": "4.72",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 25,
+      "date": "2025-07-02",
+      "description": "FNB APP PAYMENT FROM FETUM",
+      "fee": "0.00",
+      "amount": "63.75",
+      "balance": "17.02",
+      "card_ref": null
+    },
+    {
+      "posting_index": 26,
+      "date": "2025-07-02",
+      "description": "KATURUHUJ VOPIG",
+      "fee": "0.00",
+      "amount": "-373.50",
+      "balance": "-46.73",
+      "card_ref": null
+    },
+    {
+      "posting_index": 27,
+      "date": "2025-06-30",
+      "description": "PURCH Dischem Kamigozo Te 400000******1234",
+      "fee": "0.00",
+      "amount": "-899.98",
+      "balance": "326.77",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 28,
+      "date": "2025-06-30",
+      "description": "PURCH CLICKS HUMARENO 400000******1234",
+      "fee": "0.00",
+      "amount": "-313.77",
+      "balance": "1226.75",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 29,
+      "date": "2025-06-28",
+      "description": "PURCH PnP God Fehulo 400000******1234",
+      "fee": "0.00",
+      "amount": "-525.45",
+      "balance": "1540.52",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 30,
+      "date": "2025-06-28",
+      "description": "PURCH PICK N PAY FEFESI 400000******1234",
+      "fee": "0.00",
+      "amount": "-40.20",
+      "balance": "2065.97",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 31,
+      "date": "2025-06-30",
+      "description": "ZOHURUWALUNOP",
+      "fee": "0.00",
+      "amount": "-3999.87",
+      "balance": "2106.17",
+      "card_ref": null
+    },
+    {
+      "posting_index": 32,
+      "date": "2025-06-26",
+      "description": "PURCH ENGEN KANERUMIT NET 400000******1234",
+      "fee": "0.00",
+      "amount": "-681.69",
+      "balance": "6106.04",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 33,
+      "date": "2025-06-27",
+      "description": "FNB APP PAYMENT FROM FETUM",
+      "fee": "0.00",
+      "amount": "29.75",
+      "balance": "6787.73",
+      "card_ref": null
+    },
+    {
+      "posting_index": 34,
+      "date": "2025-06-26",
+      "description": "#MONTHLY ACCOUNT FEE",
+      "fee": "0.00",
+      "amount": "-202.80",
+      "balance": "6757.98",
+      "card_ref": null
+    },
+    {
+      "posting_index": 35,
+      "date": "2025-06-25",
+      "description": "PURCH Yoco *FEZ NEMI D3 400000******1234",
+      "fee": "0.00",
+      "amount": "-60.76",
+      "balance": "6960.78",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 36,
+      "date": "2025-06-24",
+      "description": "PURCH Vodacom Bundles 400000******1234",
+      "fee": "0.00",
+      "amount": "-229.84",
+      "balance": "7021.54",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 37,
+      "date": "2025-06-25",
+      "description": "KATURUHUJ VOPIG",
+      "fee": "0.00",
+      "amount": "-373.50",
+      "balance": "7251.38",
+      "card_ref": null
+    },
+    {
+      "posting_index": 38,
+      "date": "2025-06-25",
+      "description": "INTERNET TRF FROM LOSAVOMAVONEDATUGO",
+      "fee": "0.00",
+      "amount": "2345.00",
+      "balance": "7624.88",
+      "card_ref": null
+    },
+    {
+      "posting_index": 39,
+      "date": "2025-06-25",
+      "description": "LOSAVOMAVONEDATUGO",
+      "fee": "0.00",
+      "amount": "-971.50",
+      "balance": "5279.88",
+      "card_ref": null
+    },
+    {
+      "posting_index": 40,
+      "date": "2025-06-24",
+      "description": "FNB APP TRANSFER FROM TRANSFER",
+      "fee": "0.00",
+      "amount": "8.00",
+      "balance": "6251.38",
+      "card_ref": null
+    },
+    {
+      "posting_index": 41,
+      "date": "2025-06-24",
+      "description": "FNB APP TRANSFER FROM VORURUWAKOMIKO",
+      "fee": "0.00",
+      "amount": "63.70",
+      "balance": "6243.38",
+      "card_ref": null
+    },
+    {
+      "posting_index": 42,
+      "date": "2025-06-21",
+      "description": "PURCH ENGEN R89 400000******1234",
+      "fee": "0.00",
+      "amount": "-388.46",
+      "balance": "6179.68",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 43,
+      "date": "2025-06-21",
+      "description": "PURCH PnP God Fehulo 400000******1234",
+      "fee": "0.00",
+      "amount": "-267.76",
+      "balance": "6568.14",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 44,
+      "date": "2025-06-21",
+      "description": "PURCH Wanoloyebi Lomayelo 400000******1234",
+      "fee": "0.00",
+      "amount": "-80.39",
+      "balance": "6835.90",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 45,
+      "date": "2025-06-21",
+      "description": "PURCH PICK N PAY FEFESI 400000******1234",
+      "fee": "0.00",
+      "amount": "-40.20",
+      "balance": "6916.29",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 46,
+      "date": "2025-06-23",
+      "description": "FNB APP TRANSFER FROM LOVO",
+      "fee": "0.00",
+      "amount": "11.80",
+      "balance": "6956.49",
+      "card_ref": null
+    },
+    {
+      "posting_index": 47,
+      "date": "2025-06-20",
+      "description": "PURCH Dis-Chem Zolovorewa 400000******1234",
+      "fee": "0.00",
+      "amount": "-270.66",
+      "balance": "6944.69",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 48,
+      "date": "2025-06-20",
+      "description": "PURCH NEHUF TUKONOGODAM 400000******1234",
+      "fee": "0.00",
+      "amount": "-186.85",
+      "balance": "7215.35",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 49,
+      "date": "2025-06-20",
+      "description": "PURCH GOMI REYEM & SARU 400000******1234",
+      "fee": "0.00",
+      "amount": "-57.75",
+      "balance": "7402.20",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 50,
+      "date": "2025-06-19",
+      "description": "PURCH NEMAJIN WAZOMA 400000******1234",
+      "fee": "0.00",
+      "amount": "-102.70",
+      "balance": "7459.95",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 51,
+      "date": "2025-06-19",
+      "description": "PURCH Yoco *FEZ NEMI D3 400000******1234",
+      "fee": "0.00",
+      "amount": "-156.86",
+      "balance": "7562.65",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 52,
+      "date": "2025-06-19",
+      "description": "PURCH Total Nobinetu Goji 400000******1234",
+      "fee": "0.00",
+      "amount": "-69.69",
+      "balance": "7719.51",
+      "card_ref": "1234"
+    },
+    {
+      "posting_index": 53,
+      "date": "2025-06-19",
+      "description": "5735 VOPIJID SIL90729",
+      "fee": "0.00",
+      "amount": "-566.04",
+      "balance": "7789.20",
+      "card_ref": null
+    },
+    {
+      "posting_index": 54,
+      "date": "2025-06-19",
+      "description": "VOZ WATULO SAS 229569 605445",
+      "fee": "0.00",
+      "amount": "-686.66",
+      "balance": "8355.24",
+      "card_ref": null
+    },
+    {
+      "posting_index": 55,
+      "date": "2025-06-19",
+      "description": "MA BILUM 55555555509082KA",
+      "fee": "0.00",
+      "amount": "-24.00",
+      "balance": "9041.90",
+      "card_ref": null
+    },
+    {
+      "posting_index": 56,
+      "date": "2025-06-19",
+      "description": "INTERNET TRF FROM JIRUSIV&OKORE",
+      "fee": "0.00",
+      "amount": "248.43",
+      "balance": "9065.90",
+      "card_ref": null
+    },
+    {
+      "posting_index": 57,
+      "date": "2025-06-19",
+      "description": "59RUGONOHUWANEMIHUF",
+      "fee": "0.00",
+      "amount": "-12144.00",
+      "balance": "8817.47",
+      "card_ref": null
+    },
+    {
+      "posting_index": 58,
+      "date": "2025-06-19",
+      "description": "FNB APP PAYMENT FROM REFELU",
+      "fee": "0.00",
+      "amount": "11424.00",
+      "balance": "20961.47",
+      "card_ref": null
+    },
+    {
+      "posting_index": 59,
+      "date": "2025-06-17",
+      "description": "PURCH ENGEN R89 400000******1234",
+      "fee": "0.00",
+      "amount": "-482.02",
+      "balance": "9537.47",
+      "card_ref": "1234"
+    }
+  ]
+}
