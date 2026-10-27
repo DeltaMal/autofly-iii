@@ -66,4 +66,5 @@ return [
     'settings_link'          => 'Change the custom period settings',
     'mode_anchored'          => 'Starts on day :day of each month',
     'mode_manual'            => 'Manual periods',
+    'manual_no_starts'       => 'Manual mode has no period starts yet, so periods fall back to calendar months. Close the current period (below) to add the first start date.',
 ];

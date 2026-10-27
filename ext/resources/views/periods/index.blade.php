@@ -4,6 +4,9 @@
         <div class="alert alert-info">{{ __('ext::periods.not_active') }}
             <a href="{{ route('preferences.index') }}">{{ __('ext::periods.settings_link') }}</a></div>
     @endif
+    @if(null === $settings->anchorDay && 0 === count($settings->starts))
+        <div class="alert alert-warning" id="ext-manual-no-starts">{{ __('ext::periods.manual_no_starts') }}</div>
+    @endif
     <div class="row">
         <div class="col-lg-7 col-md-12">
             <div class="card mb-3">
