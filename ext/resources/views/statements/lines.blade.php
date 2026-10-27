@@ -30,7 +30,10 @@
                         <small class="text-muted">{{ __('ext::statements.status_line_'.$line->status, []) }}@if(null !== $line->match_score) · {{ __('ext::statements.score') }} {{ round((float) $line->match_score, 1) }}@endif</small>
                     @endif
                     @if(is_array($line->proposal))
-                        <div class="small">{{ __('ext::statements.proposal_text', $line->proposal) }}</div>
+                        <div class="small">{{ __('ext::statements.proposal_text', $line->proposal) }}
+                            @php($percent = \FireflyIII\Ext\Statements\Reconciler::percentDifference((string) $line->proposal['from'], (string) $line->proposal['to']))
+                            @if(null !== $percent)<span class="badge text-bg-light ext-proposal-percent">{{ __('ext::statements.proposal_percent', ['percent' => $percent]) }}</span>@endif
+                        </div>
                     @endif
                 </td>
             </tr>

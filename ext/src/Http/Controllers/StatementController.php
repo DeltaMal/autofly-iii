@@ -118,9 +118,14 @@ final class StatementController extends Controller
             break;
         }
 
+        $importer    = new StatementImporter($this->user(), app(BankRegistry::class));
+        $breakdown   = $importer->currentBreakdown($statement);
+
         return view('ext::statements.show', [
             'statement'      => $statement,
-            'breakdown'      => (array) ($statement->summary['breakdown'] ?? []),
+            'breakdown'      => $breakdown,
+            'unexplained'    => $importer->unexplained($statement, $breakdown),
+            'decision'       => $statement->summary['unexplained']['decision'] ?? null,
             'missing'        => $lines->where('status', StatementLine::MISSING),
             'matched'        => $lines->whereIn('status', [StatementLine::MATCHED, StatementLine::CREATED]),
             'proposals'      => $lines->where('status', StatementLine::PROPOSAL),
@@ -136,9 +141,47 @@ final class StatementController extends Controller
     {
         $statement = $this->find($statementId);
         $ids       = static fn (string $key): array => array_values(array_map('intval', (array) $request->input($key, [])));
-        (new StatementImporter($this->user(), app(BankRegistry::class)))->commit($statement, $ids('create'), $ids('apply'), $ids('ignore'));
+        $importer  = new StatementImporter($this->user(), app(BankRegistry::class));
+        $statement = $importer->commit($statement, $ids('create'), $ids('apply'), $ids('ignore'));
+        session()->flash('success', (string) trans('ext::statements.committed'));
 
-        return redirect(route('ext.statements.show', [$statement->id]))->with('success', (string) trans('ext::statements.committed'));
+        // the answer to "Book <amount> as Unexplained?", asked on the review page when the difference was not zero
+        $answer    = (string) $request->input('book_unexplained', '');
+        if ('' !== $answer) {
+            $this->answer($importer, $statement, 'no' === $answer ? 'no' : 'yes', $answer);
+        }
+
+        return redirect(route('ext.statements.show', [$statement->id]));
+    }
+
+    /**
+     * "Book <amount> as Unexplained?" on a committed statement: yes books it, no books nothing (and the page
+     * keeps offering it).
+     */
+    public function unexplained(Request $request, int $statementId): RedirectResponse
+    {
+        $statement = $this->find($statementId);
+        $data      = $request->validate(['answer' => ['required', 'in:yes,no'], 'amount' => ['required', 'string', 'max:40']]);
+        $this->answer(new StatementImporter($this->user(), app(BankRegistry::class)), $statement, $data['answer'], $data['amount']);
+
+        return redirect(route('ext.statements.show', [$statement->id]));
+    }
+
+    private function answer(StatementImporter $importer, Statement $statement, string $answer, string $amount): void
+    {
+        if ('no' === $answer) {
+            $importer->declineUnexplained($statement);
+            session()->flash('info', (string) trans('ext::statements.unexplained_declined'));
+
+            return;
+        }
+
+        try {
+            $importer->bookUnexplained($statement, $amount);
+            session()->flash('success', (string) trans('ext::statements.unexplained_booked', ['amount' => $amount]));
+        } catch (StatementException $e) {
+            session()->flash('warning', $e->getMessage());
+        }
     }
 
     private function find(int $id): Statement

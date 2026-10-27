@@ -44,9 +44,10 @@ final class ReconciliationAdjuster
     public function __construct(private readonly User $user) {}
 
     /**
-     * @param string $difference bank minus Firefly: positive means money must come into the account
+     * @param string  $difference   bank minus Firefly: positive means money must come into the account
+     * @param ?string $categoryName e.g. "Unexplained", so the difference stays visible in Firefly's reports
      */
-    public function book(Account $account, Carbon $date, string $difference, string $description): ?TransactionGroup
+    public function book(Account $account, Carbon $date, string $difference, string $description, ?string $categoryName = null, ?string $notes = null): ?TransactionGroup
     {
         if (0 === bccomp($difference, '0', 2)) {
             return null;
@@ -81,6 +82,8 @@ final class ReconciliationAdjuster
                 'source_id'           => $source->id,
                 'destination_id'      => $destination->id,
                 'reconciled'          => true,
+                'category_name'       => $categoryName,
+                'notes'               => $notes,
             ]],
         ]);
     }

@@ -41,6 +41,7 @@ Route::group(
         Route::post('statements', ['uses' => 'StatementController@store', 'as' => 'statements.store']);
         Route::get('statements/{statementId}', ['uses' => 'StatementController@show', 'as' => 'statements.show'])->whereNumber('statementId');
         Route::post('statements/{statementId}/commit', ['uses' => 'StatementController@commit', 'as' => 'statements.commit'])->whereNumber('statementId');
+        Route::post('statements/{statementId}/unexplained', ['uses' => 'StatementController@unexplained', 'as' => 'statements.unexplained'])->whereNumber('statementId');
 
         // Phase 3: email import
         Route::get('mailboxes', ['uses' => 'MailboxController@index', 'as' => 'mailboxes.index']);
