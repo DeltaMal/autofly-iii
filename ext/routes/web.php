@@ -30,5 +30,9 @@ use Illuminate\Support\Facades\Route;
 Route::group(
     ['middleware' => ['web', 'user-full-auth'], 'prefix' => 'ext', 'as' => 'ext.', 'namespace' => 'FireflyIII\Ext\Http\Controllers'],
     static function (): void {
+        // Phase 1: custom periods
+        Route::get('periods', ['uses' => 'PeriodController@index', 'as' => 'periods.index']);
+        Route::post('periods/close', ['uses' => 'PeriodController@close', 'as' => 'periods.close']);
+        Route::post('periods/starts/delete', ['uses' => 'PeriodController@deleteStart', 'as' => 'periods.starts.delete']);
     }
 );

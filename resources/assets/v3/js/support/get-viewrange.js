@@ -39,12 +39,14 @@ import {
     subWeeks,
     subYears,
 } from "date-fns";
+import { extViewRange, extAddPeriod, extSubtractPeriod } from "../../../../../ext/resources/assets/period-calendar.js"; // CUSTOM(ext)
 
 function getViewRange(viewRange, today) {
     let start;
     let end;
 
     switch (viewRange) {
+        case "CP": return extViewRange(today); // CUSTOM(ext)
         case "last365":
             start = startOfDay(subDays(today, 365));
             end = endOfDay(today);
@@ -147,6 +149,7 @@ function addPeriod(date, viewRange) {
     let nextPeriodStart;
     let nextPeriodEnd;
     switch (viewRange) {
+        case "CP": return extAddPeriod(date); // CUSTOM(ext)
         case "last365":
             nextPeriodStart = startOfYear(addYears(date, 1));
             nextPeriodEnd = addYears(date, 1);
@@ -252,6 +255,7 @@ function subtractPeriod(date, viewRange) {
     let prevPeriodStart;
     let prevPeriodEnd;
     switch (viewRange) {
+        case "CP": return extSubtractPeriod(date); // CUSTOM(ext)
         case "last365":
             prevPeriodStart = startOfYear(subYears(date, 1));
             prevPeriodEnd = subYears(date, 1);

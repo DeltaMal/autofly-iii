@@ -25,6 +25,11 @@ declare(strict_types=1);
 
 namespace FireflyIII\Ext;
 
+use FireflyIII\Ext\Http\Middleware\SaveExtPeriodPreference;
+use FireflyIII\Ext\Periods\ExtNavigation;
+use FireflyIII\Ext\Periods\PeriodSettings;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -38,6 +43,9 @@ final class ExtServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(self::ROOT.'/config/ext.php', 'ext');
+
+        // Phase 1: custom periods. Registered after FireflyServiceProvider, so this binding wins.
+        $this->app->bind('navigation', static fn (): ExtNavigation => new ExtNavigation());
     }
 
     public function boot(): void
@@ -46,5 +54,40 @@ final class ExtServiceProvider extends ServiceProvider
         $this->loadViewsFrom(self::ROOT.'/resources/views', 'ext');
         $this->loadTranslationsFrom(self::ROOT.'/resources/lang', 'ext');
         $this->loadMigrationsFrom(self::ROOT.'/database/migrations');
+
+        $this->bootPeriods();
+    }
+
+    /**
+     * The view range "CP" (ext/docs/01-custom-periods.md).
+     */
+    private function bootPeriods(): void
+    {
+        $ranges = config('firefly.valid_view_ranges', []);
+        if (!in_array(ExtNavigation::KEY, $ranges, true)) {
+            config(['firefly.valid_view_ranges' => [...$ranges, ExtNavigation::KEY]]);
+        }
+        config([
+            'firefly.range_to_repeat_freq.'.ExtNavigation::KEY       => ExtNavigation::KEY,
+            'firefly.default_preferences.'.ExtNavigation::PREFERENCE => PeriodSettings::defaults()->toArray(),
+        ]);
+        $this->pushMiddlewareToGroup('user-full-auth', SaveExtPeriodPreference::class);
+    }
+
+    /**
+     * Like Router::pushMiddlewareToGroup(), but on the HTTP kernel: the kernel re-syncs its groups to the
+     * router when it is constructed, which (in tests, queue workers, ...) can happen after this provider boots.
+     */
+    private function pushMiddlewareToGroup(string $group, string $middleware): void
+    {
+        $push = static function (HttpKernel $kernel) use ($group, $middleware): void {
+            if ($kernel instanceof Kernel && !in_array($middleware, $kernel->getMiddlewareGroups()[$group] ?? [], true)) {
+                $kernel->appendMiddlewareToGroup($group, $middleware);
+            }
+        };
+        if ($this->app->resolved(HttpKernel::class)) {
+            $push($this->app->make(HttpKernel::class));
+        }
+        $this->app->afterResolving(HttpKernel::class, $push);
     }
 }

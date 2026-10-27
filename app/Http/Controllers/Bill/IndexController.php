@@ -192,6 +192,7 @@ final class IndexController extends Controller
             'last90'  => '4',
             'last365' => '1',
         ];
+        $division += 'CP' === $range ? ['CP' => \FireflyIII\Ext\Periods\ExtNavigation::periodsPerYear()] : []; // CUSTOM(ext)
         $perPeriod  = bcdiv($yearAmount, $division[$range]);
 
         Log::debug(sprintf('Amount per %s is %s (%s / %s)', $range, $perPeriod, $yearAmount, $division[$range]));
