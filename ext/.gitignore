@@ -3,3 +3,4 @@ tests/fixtures/private/
 docker/.env.dev
 *.token.json
 ext-import.json
+.phpunit.cache/

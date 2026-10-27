@@ -70,4 +70,5 @@ return [
     TagServiceProvider::class,
     AdminServiceProvider::class,
     RecurringServiceProvider::class,
+    FireflyIII\Ext\ExtServiceProvider::class, // CUSTOM(ext) must stay after FireflyServiceProvider
 ];

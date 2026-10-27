@@ -1,0 +1,44 @@
+# Dev stack for the ext fork. Never point this at the production database or volumes.
+#   cp ext/docker/.env.dev.example ext/docker/.env.dev   (then edit APP_KEY etc.)
+#   docker compose -f ext/docker/compose.dev.yml up -d --build
+#   open http://localhost:8090
+name: ff3-ext-dev
+
+x-firefly: &firefly
+  build:
+    context: ../..
+    dockerfile: ext/docker/Dockerfile
+  image: ff3-ext-dev:local
+  env_file: .env.dev
+  volumes:
+    - upload:/var/www/html/storage/upload
+  depends_on:
+    - db
+
+services:
+  firefly:
+    <<: *firefly
+    ports:
+      - "8090:8080"
+
+  # Runs the Laravel scheduler (ext:mail:poll every 15 minutes) in the same image.
+  ext-scheduler:
+    <<: *firefly
+    entrypoint: []
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    healthcheck:
+      disable: true
+    depends_on:
+      - firefly
+
+  db:
+    image: mariadb:lts
+    env_file: .env.dev
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-firefly}
+    volumes:
+      - db:/var/lib/mysql
+
+volumes:
+  db:
+  upload:

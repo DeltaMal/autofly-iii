@@ -1,0 +1,71 @@
+# Builds the ext image. Pushes to GHCR on tags ext-v* (e.g. ext-v6.7.9-ext.1 -> 6.7.9-ext.1 + latest-ext);
+# on pull requests it only builds.
+name: ext-image
+
+on:
+  push:
+    tags: ['ext-v*']
+  pull_request:
+    branches: [ext, 'ext-phase-*']
+    paths:
+      - 'ext/docker/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'resources/assets/**'
+      - 'ext/resources/assets/**'
+      - '.github/workflows/ext-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/deltamal/autofly-iii
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out tags
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/ext-v* ]]; then
+            version="${GITHUB_REF#refs/tags/ext-v}"
+            echo "tags=${IMAGE}:${version},${IMAGE}:latest-ext" >> "$GITHUB_OUTPUT"
+            echo "version=${version}" >> "$GITHUB_OUTPUT"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=${IMAGE}:pr-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "version=pr-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "isodate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.meta.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build (and push on tags)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ext/docker/Dockerfile
+          push: ${{ steps.meta.outputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            version=${{ steps.meta.outputs.version }}
+            isodate=${{ steps.meta.outputs.isodate }}
+            gitrevision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

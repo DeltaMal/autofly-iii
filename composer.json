@@ -142,12 +142,14 @@
             "FireflyIII\\": "app/",
             "Domain\\": "domain/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "FireflyIII\\Ext\\": "ext/src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "FireflyIII\\Ext\\Tests\\": "ext/tests/"
         }
     },
     "extra": {

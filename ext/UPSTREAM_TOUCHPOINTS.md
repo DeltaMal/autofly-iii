@@ -1,14 +1,14 @@
 # Upstream touchpoints
 
-This lists every upstream file the ext fork changes. It is the merge checklist: after merging an upstream release, each hook below must still be present and work. Each hook is marked `CUSTOM(ext)` in the file. `ext/scripts/merge-upstream.sh` and CI check for the markers.
+This lists every upstream file the ext fork changes. It is the merge checklist: after merging an upstream release, each hook below must still be present and work. Each hook is marked `CUSTOM(ext)` in the file. `ext/scripts/check-touchpoints.sh` checks the markers; `ext/scripts/merge-upstream.sh` and CI run it.
 
 **Rule:** a change to an upstream file must be a single delegating hook. Add it to this table in the same commit.
 
 | File | Hook | Marker | Phase | Status |
 |---|---|---|---|---|
-| `bootstrap/providers.php` | Register `FireflyIII\Ext\ExtServiceProvider` (after `FireflyServiceProvider`) | `// CUSTOM(ext)` | 0 | planned |
-| `composer.json` | `autoload.psr-4` `FireflyIII\\Ext\\` → `ext/src/`; `autoload-dev.psr-4` `FireflyIII\\Ext\\Tests\\` → `ext/tests/` | n/a (JSON has no comments; CI checks the keys) | 0 | planned |
-| `resources/views/components/layout/sidebar.blade.php` | `@includeIf('ext::partials.menu')` before the closing `</ul>` | `{{-- CUSTOM(ext) --}}` | 0 | planned |
+| `bootstrap/providers.php` | Register `FireflyIII\Ext\ExtServiceProvider` (after `FireflyServiceProvider`) | `// CUSTOM(ext)` | 0 | added |
+| `composer.json` | `autoload.psr-4` `FireflyIII\\Ext\\` → `ext/src/`; `autoload-dev.psr-4` `FireflyIII\\Ext\\Tests\\` → `ext/tests/` | n/a (JSON has no comments; CI checks the keys) | 0 | added |
+| `resources/views/components/layout/sidebar.blade.php` | `@includeIf('ext::partials.menu')` before the closing `</ul>` | `{{-- CUSTOM(ext) --}}` | 0 | added |
 | `resources/views/preferences/index.blade.php` | `@includeIf('ext::preferences.view-range')` inside the view-range radios | `{{-- CUSTOM(ext) --}}` | 1 | planned |
 | `resources/assets/v3/js/support/get-viewrange.js` | `case 'CP'` → `period-calendar.js` | `// CUSTOM(ext)` | 1 | planned |
 | v3 boot file that loads `viewRange` (exact file found in Phase 1) | Also load the `extPeriod` preference | `// CUSTOM(ext)` | 1 | planned |
