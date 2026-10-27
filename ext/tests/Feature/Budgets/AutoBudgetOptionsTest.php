@@ -90,7 +90,7 @@ final class AutoBudgetOptionsTest extends FeatureTestCase
         foreach (AutoBudgetOptions::FLAGS as $flag) {
             $page->assertSee((string) trans('ext::periods.ab_'.$flag.'_help'));
         }
-        self::assertSame(AutoBudgetOptions::defaults(), CustomPeriodAutoBudgets::options($user));
+        self::assertEquals(AutoBudgetOptions::defaults(), CustomPeriodAutoBudgets::options($user));
         self::assertEquals(new AutoBudgetOptions(true, true, true, true, true, 'pro_rata'), AutoBudgetOptions::defaults());
 
         $this->post(route('ext.periods.auto-budgets'), [
