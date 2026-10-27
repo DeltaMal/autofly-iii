@@ -13,6 +13,7 @@ This lists every upstream file the ext fork changes. It is the merge checklist: 
 | `resources/assets/v3/js/support/get-viewrange.js` | One `import` of `ext/resources/assets/period-calendar.js` plus one `case "CP": return ext…(…);` line in each of `getViewRange`, `addPeriod`, `subtractPeriod` | `// CUSTOM(ext)` | 1 | added |
 | `resources/assets/v3/js/boot/bootstrap.js` | `"extPeriod",` added to the `getVariables([...])` list, which also puts it in `window.store` | `// CUSTOM(ext)` | 1 | added |
 | `app/Http/Controllers/Bill/IndexController.php` | In `amountPerPeriod()`: one line adding a `CP` divisor from `ExtNavigation::periodsPerYear()` (the `$division` map has no `CP` key, so the bills page would crash) | `// CUSTOM(ext)` | 1 | added |
+| `resources/views/reports/index.blade.php` | `@includeIf('ext::reports.cycle-links')` after the preset-ranges row (years, quarters, months): custom period quick links for CP users | `{{-- CUSTOM(ext) --}}` | follow-ups 2 | added |
 | `CLAUDE.md` (new file at the repo root; upstream has none at v6.7.9) | Points coding agents at `ext/docs/` | n/a | 0 | added |
 
 New files placed in upstream folders (no conflict risk; list them so they aren't lost):
