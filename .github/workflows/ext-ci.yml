@@ -1,0 +1,60 @@
+# CI for the ext fork (ext/docs/04-deployment-and-cutover.md). Upstream's own workflows are
+# disabled in the fork's Actions settings, not deleted.
+name: ext-ci
+
+on:
+  pull_request:
+    branches: [ext, 'ext-phase-*']
+  push:
+    branches: [ext]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, intl, mbstring, pdo, pdo_sqlite, sqlite3, xml, zip, gd, sodium, curl, dom, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Check upstream touchpoints
+        run: bash ext/scripts/check-touchpoints.sh
+
+      - name: composer.lock is identical to upstream
+        run: |
+          version="$(sed -nE "s/^'version' => '([0-9.]+)',/\1/p" config/firefly.php)"
+          git fetch --depth=1 https://github.com/firefly-iii/firefly-iii.git "refs/tags/v${version}:refs/tags/upstream-v${version}"
+          git diff --exit-code "upstream-v${version}" -- composer.lock
+          echo "composer.lock matches upstream v${version}"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+
+      - name: Install poppler (pdftotext)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+
+      - name: PHPUnit (ext suites)
+        run: vendor/bin/phpunit -c ext/phpunit.xml
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: JS tests
+        run: node --test ext/tests/js/

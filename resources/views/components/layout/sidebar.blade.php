@@ -255,4 +255,5 @@
             </a>
         </li>
     @endif
+    @includeIf('ext::partials.menu') {{-- CUSTOM(ext) --}}
 </ul>

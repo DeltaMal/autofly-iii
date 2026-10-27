@@ -1,0 +1,16 @@
+# Used by BuildKit for ext/docker/Dockerfile (keeps the build context small and private data out).
+.git
+node_modules
+**/node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+.env
+ext/docker/.env.dev
+ext/tests/fixtures/private
+.phpunit.cache
+bootstrap/cache/*.php

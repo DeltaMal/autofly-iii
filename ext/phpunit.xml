@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ phpunit.xml for the ext fork of Firefly III.
+  ~ Run from the repository root: vendor/bin/phpunit -c ext/phpunit.xml
+  ~ AGPL-3.0-or-later, like upstream.
+  -->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="../vendor/phpunit/phpunit/phpunit.xsd"
+         backupGlobals="false"
+         backupStaticProperties="false"
+         beStrictAboutOutputDuringTests="true"
+         bootstrap="../vendor/autoload.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         processIsolation="false">
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:Ymx0RXh0Rm9ya1Rlc3RLZXkxMjM0NTY3ODkwMTIzNDU=" force="true"/>
+        <env name="TZ" value="Africa/Johannesburg" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="APP_LOG_LEVEL" value="notice" force="true"/>
+        <env name="AUDIT_LOG_LEVEL" value="emergency" force="true"/>
+        <env name="QUERY_PARSER_IMPLEMENTATION" value="new" force="true"/>
+    </php>
+    <testsuites>
+        <testsuite name="ext-unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="ext-feature">
+            <directory suffix="Test.php">./tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </source>
+</phpunit>
