@@ -26,8 +26,10 @@ declare(strict_types=1);
 namespace FireflyIII\Ext\Http\Controllers;
 
 use Carbon\Carbon;
+use FireflyIII\Ext\Budgets\AutoBudgetStatus;
 use FireflyIII\Ext\Periods\ExtNavigation;
 use FireflyIII\Ext\Periods\PeriodCalendar;
+use FireflyIII\Ext\Periods\PeriodSettings;
 use FireflyIII\Http\Controllers\Controller;
 use FireflyIII\Support\Facades\Navigation;
 use FireflyIII\Support\Facades\Preferences;
@@ -76,6 +78,8 @@ final class PeriodController extends Controller
             'starts'         => $starts,
             'active'         => ExtNavigation::KEY === Navigation::getViewRange(false),
             'today'          => today(config('app.timezone'))->format('Y-m-d'),
+            'autoBudgets'    => $settings->autoBudgets,
+            'status'         => AutoBudgetStatus::get(auth()->user()),
             'extBreadcrumbs' => [(string) trans('ext::periods.title') => route('ext.periods.index')],
         ]);
     }
@@ -104,6 +108,19 @@ final class PeriodController extends Controller
         $starts   = array_filter($settings->starts, static fn (array $item): bool => $item['date'] !== $data['date']);
         $this->save($settings->withStarts($starts)->toArray());
         session()->flash('success', (string) trans('ext::periods.start_deleted', ['date' => $data['date']]));
+
+        return redirect(route('ext.periods.index'));
+    }
+
+    /**
+     * The auto-budget job options (ext/docs/01, "Auto-budget job options"). Only the "auto_budgets" key changes.
+     */
+    public function autoBudgets(Request $request): RedirectResponse
+    {
+        $data     = $request->validate(PeriodSettings::autoBudgetRules());
+        $settings = ExtNavigation::settings()->withAutoBudgets(PeriodSettings::autoBudgetsFromInput($data));
+        Preferences::set(ExtNavigation::PREFERENCE, $settings->toArray());
+        session()->flash('success', (string) trans('ext::periods.ab_saved'));
 
         return redirect(route('ext.periods.index'));
     }

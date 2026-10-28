@@ -95,4 +95,62 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3" id="ext-auto-budgets">
+                <div class="card-header"><h3 class="card-title">{{ __('ext::periods.ab_title') }}</h3></div>
+                <form method="post" action="{{ route('ext.periods.auto-budgets') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}"/>
+                    <div class="card-body">
+                        <p class="small">{{ __('ext::periods.ab_intro') }}</p>
+                        @foreach(['enabled' => $autoBudgets->enabled, 'take_over' => $autoBudgets->takeOver, 'new_budget_immediate' => $autoBudgets->newBudgetImmediate, 'edit_immediate' => $autoBudgets->editImmediate, 'cut_on_leave' => $autoBudgets->cutOnLeave] as $option => $on)
+                            <div class="form-check form-switch mb-3">
+                                <input type="hidden" name="{{ $option }}" value="0"/>
+                                <input class="form-check-input" type="checkbox" role="switch" id="ext_ab_{{ $option }}" name="{{ $option }}" value="1" @checked($on)>
+                                <label class="form-check-label fw-bold" for="ext_ab_{{ $option }}">{{ __('ext::periods.ab_'.$option) }}</label>
+                                <div class="form-text">{{ __('ext::periods.ab_'.$option.'_help') }}</div>
+                            </div>
+                        @endforeach
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="ext_ab_gap_fill">{{ __('ext::periods.ab_gap_fill') }}</label>
+                            <select class="form-select" id="ext_ab_gap_fill" name="gap_fill">
+                                @foreach(['pro_rata', 'full', 'none'] as $mode)
+                                    <option value="{{ $mode }}" @selected($autoBudgets->gapFill === $mode)>{{ __('ext::periods.ab_gap_'.$mode) }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('ext::periods.ab_gap_fill_help') }}</div>
+                        </div>
+                        <dl class="row small mb-0" id="ext-auto-budget-status">
+                            <dt class="col-sm-4">{{ __('ext::periods.ab_last_run') }}</dt>
+                            <dd class="col-sm-8">
+                                @if(isset($status['job']))
+                                    {{ \Carbon\Carbon::parse($status['job']['at'])->setTimezone(config('app.timezone'))->isoFormat('LLL') }}:
+                                    @if($status['job']['disabled'] ?? false)
+                                        {{ __('ext::periods.ab_disabled_run') }}
+                                    @else
+                                        {{ __('ext::periods.ab_counts', ['created' => $status['job']['created'] ?? 0, 'adjusted' => $status['job']['adjusted'] ?? 0, 'cut' => $status['job']['cut'] ?? 0, 'removed' => $status['job']['removed'] ?? 0]) }}
+                                    @endif
+                                @else
+                                    {{ __('ext::periods.ab_never') }}
+                                @endif
+                            </dd>
+                            <dt class="col-sm-4">{{ __('ext::periods.ab_last_change') }}</dt>
+                            <dd class="col-sm-8">
+                                @if(isset($status['latest']))
+                                    {{ \Carbon\Carbon::parse($status['latest']['at'])->setTimezone(config('app.timezone'))->isoFormat('LLL') }}
+                                    ({{ __('ext::periods.ab_source_'.($status['latest']['source'] ?? 'edit')) }}):
+                                    {{ __('ext::periods.ab_counts', ['created' => $status['latest']['created'] ?? 0, 'adjusted' => $status['latest']['adjusted'] ?? 0, 'cut' => $status['latest']['cut'] ?? 0, 'removed' => $status['latest']['removed'] ?? 0]) }}
+                                @else
+                                    {{ __('ext::periods.ab_never') }}
+                                @endif
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary"><em class="bi bi-save"></em> {{ __('ext::periods.ab_save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection

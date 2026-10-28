@@ -28,27 +28,51 @@ namespace FireflyIII\Ext\Budgets;
 use FireflyIII\Events\Model\BudgetLimit\CreatedBudgetLimit;
 use FireflyIII\Models\AutoBudget;
 use FireflyIII\Models\BudgetLimit;
+use FireflyIII\Support\Facades\Navigation;
 use Illuminate\Support\Facades\Log;
 
 /**
- * A budget created with a monthly auto-budget while on CP gets the current cycle's limit at once
- * (ext/docs/01-custom-periods.md, "Auto-budgets").
+ * Hooks on upstream's auto-budget creation and editing (ext/docs/01-custom-periods.md, "Auto-budgets").
  *
- * Upstream's BudgetRepository::store() saves the auto-budget and right after it stores a first calendar-month
- * limit with the auto-budget amount (no event in between, and nothing marks that limit). ExtServiceProvider
- * wires two hooks: autoBudgetCreated() (Eloquent "created" on AutoBudget) remembers the budget, and
- * limitCreated() (the CreatedBudgetLimit event) recognises the very next limit of that budget as the one
- * auto-budget creation made and hands it to CustomPeriodAutoBudgets::replaceInitialLimit(). Any other limit,
- * and every limit of a non-CP user, is left alone. Bound as a singleton (one per request or job).
+ * Upstream's BudgetRepository::store() saves the auto-budget and right after it stores a first limit for the
+ * auto-budget's current period with the auto-budget amount (no event in between, and nothing marks that limit).
+ * ExtServiceProvider wires three hooks:
+ * - autoBudgetCreated() (Eloquent "created" on AutoBudget): when the budget itself was just created, remember it
+ *   and wait for that first limit; otherwise an existing budget gained an auto-budget (upstream's update path),
+ *   which counts as an edit.
+ * - limitCreated() (the CreatedBudgetLimit event) recognises the very next limit of a remembered budget as the
+ *   one auto-budget creation made. It is recorded in ext_auto_budget_limits for every user (AutoBudgetLimitRegistry),
+ *   whatever the view range or options, so a later switch to CP treats it as auto-budget-made. For a user whose
+ *   monthly auto-budgets follow CP, with option "new_budget_immediate", it then becomes the current cycle's limit
+ *   (CustomPeriodAutoBudgets::replaceInitialLimit()).
+ * - autoBudgetUpdated() (Eloquent "updated" on AutoBudget): amount, type, period or currency changed. With option
+ *   "edit_immediate" on CP, the current cycle's limit is created or adjusted at once (applyEdit()); upstream's
+ *   update path makes no limit at all.
+ * Bound as a singleton (one per request or job).
  */
 final class InitialAutoBudgetLimit
 {
+    private const array EDIT_FIELDS = ['amount', 'auto_budget_type', 'period', 'transaction_currency_id'];
+
     /** @var array<int, int> budget id => auto-budget id, waiting for the first limit */
     private array $pending = [];
 
     public function autoBudgetCreated(AutoBudget $autoBudget): void
     {
-        $this->pending[(int) $autoBudget->budget_id] = (int) $autoBudget->id;
+        // store() associates the budget it has just created; the update path only sets budget_id
+        if ($autoBudget->relationLoaded('budget') && true === $autoBudget->budget?->wasRecentlyCreated) {
+            $this->pending[(int) $autoBudget->budget_id] = (int) $autoBudget->id;
+
+            return;
+        }
+        $this->edited($autoBudget);
+    }
+
+    public function autoBudgetUpdated(AutoBudget $autoBudget): void
+    {
+        if ($autoBudget->wasChanged(self::EDIT_FIELDS)) {
+            $this->edited($autoBudget);
+        }
     }
 
     public function limitCreated(CreatedBudgetLimit $event): void
@@ -65,25 +89,48 @@ final class InitialAutoBudgetLimit
         if (!$autoBudget instanceof AutoBudget || !$this->isInitialLimit($autoBudget, $limit)) {
             return;
         }
+        AutoBudgetLimitRegistry::record($limit, 'store');
         $user         = $autoBudget->budget->user;
-        if (!CustomPeriodAutoBudgets::usesCustomPeriods($user) || !CustomPeriodAutoBudgets::handles($autoBudget)) {
+        if (!CustomPeriodAutoBudgets::aligns($user) || !CustomPeriodAutoBudgets::options($user)->newBudgetImmediate || !CustomPeriodAutoBudgets::handles($autoBudget)) {
             return;
         }
         Log::debug(sprintf('ext: budget #%d was created with auto-budget #%d on custom periods; its first limit #%d follows them.', $autoBudget->budget_id, $autoBudget->id, $limit->id));
-        app(CustomPeriodAutoBudgets::class)->replaceInitialLimit($user, $autoBudget, $limit, today(config('app.timezone')));
+        $custom       = app(CustomPeriodAutoBudgets::class);
+        $custom->replaceInitialLimit($user, $autoBudget, $limit, today(config('app.timezone')));
+        AutoBudgetStatus::recordChange($user, 'new_budget', $custom->changes());
+    }
+
+    private function edited(AutoBudget $autoBudget): void
+    {
+        $budget = $autoBudget->budget()->first();
+        if (null === $budget) {
+            return;
+        }
+        $autoBudget->setRelation('budget', $budget);
+        $user   = $budget->user;
+        if (!CustomPeriodAutoBudgets::aligns($user) || !CustomPeriodAutoBudgets::options($user)->editImmediate || !CustomPeriodAutoBudgets::handles($autoBudget)) {
+            return;
+        }
+        Log::debug(sprintf('ext: auto-budget #%d of budget #%d changed on custom periods; the current cycle follows at once.', $autoBudget->id, $budget->id));
+        $custom = app(CustomPeriodAutoBudgets::class);
+        $custom->applyEdit($user, $autoBudget, today(config('app.timezone')));
+        AutoBudgetStatus::recordChange($user, 'edit', $custom->changes());
     }
 
     /**
-     * What upstream's store() makes: not generated, the auto-budget's currency and amount, this calendar month.
+     * What upstream's store() makes: not generated, the auto-budget's currency and amount, and the auto-budget
+     * period that contains today (Navigation::startOfPeriod()/endOfPeriod(), exactly as store() computes it).
      */
     private function isInitialLimit(AutoBudget $autoBudget, BudgetLimit $limit): bool
     {
         $today = today(config('app.timezone'));
+        $start = Navigation::startOfPeriod($today, $autoBudget->period);
+        $end   = Navigation::endOfPeriod($start, $autoBudget->period);
 
         return !$limit->generated
             && (int) $limit->transaction_currency_id === (int) $autoBudget->transaction_currency_id
             && 0 === bccomp((string) $limit->amount, (string) $autoBudget->amount)
-            && $limit->start_date->format('Y-m-d') === (clone $today)->startOfMonth()->format('Y-m-d')
-            && $limit->end_date->format('Y-m-d') === (clone $today)->endOfMonth()->format('Y-m-d');
+            && $limit->start_date->format('Y-m-d') === $start->format('Y-m-d')
+            && $limit->end_date->format('Y-m-d') === $end->format('Y-m-d');
     }
 }

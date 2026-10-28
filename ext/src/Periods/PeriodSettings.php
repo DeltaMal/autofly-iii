@@ -25,6 +25,9 @@ declare(strict_types=1);
 
 namespace FireflyIII\Ext\Periods;
 
+use FireflyIII\Ext\Budgets\AutoBudgetOptions;
+use Illuminate\Validation\Rule;
+
 /**
  * The user preference "extPeriod" (ext/docs/01-custom-periods.md).
  */
@@ -41,6 +44,7 @@ final readonly class PeriodSettings
         public string $businessDayRule = 'none',
         public string $label = 'range',
         public array $starts = [],
+        public AutoBudgetOptions $autoBudgets = new AutoBudgetOptions(),
     ) {}
 
     public static function defaults(): self
@@ -73,11 +77,42 @@ final readonly class PeriodSettings
             $starts[] = null === $name ? ['date' => $date] : ['date' => $date, 'name' => $name];
         }
 
-        return new self($anchor, $rule, $label, $starts);
+        return new self($anchor, $rule, $label, $starts, AutoBudgetOptions::fromArray($data['auto_budgets'] ?? null));
     }
 
     /**
-     * @return array{anchor_day: null|int, business_day_rule: string, label: string, starts: list<array{date: string, name?: string}>}
+     * Strict validation of the auto-budget options form on /ext/periods (fromArray() stays lenient for stored data).
+     *
+     * @return array<string, list<mixed>>
+     */
+    public static function autoBudgetRules(): array
+    {
+        $rules = [];
+        foreach (AutoBudgetOptions::FLAGS as $flag) {
+            $rules[$flag] = ['required', Rule::in(['0', '1', 0, 1, true, false])];
+        }
+        $rules['gap_fill'] = ['required', Rule::in(AutoBudgetOptions::GAP_FILLS)];
+
+        return $rules;
+    }
+
+    /**
+     * @param array<string, mixed> $input validated against autoBudgetRules()
+     */
+    public static function autoBudgetsFromInput(array $input): AutoBudgetOptions
+    {
+        return new AutoBudgetOptions(
+            (bool) (int) $input['enabled'],
+            (bool) (int) $input['take_over'],
+            (bool) (int) $input['new_budget_immediate'],
+            (bool) (int) $input['edit_immediate'],
+            (bool) (int) $input['cut_on_leave'],
+            (string) $input['gap_fill'],
+        );
+    }
+
+    /**
+     * @return array{anchor_day: null|int, business_day_rule: string, label: string, starts: list<array{date: string, name?: string}>, auto_budgets: array<string, bool|string>}
      */
     public function toArray(): array
     {
@@ -86,11 +121,17 @@ final readonly class PeriodSettings
             'business_day_rule' => $this->businessDayRule,
             'label'             => $this->label,
             'starts'            => $this->starts,
+            'auto_budgets'      => $this->autoBudgets->toArray(),
         ];
     }
 
     public function withStarts(array $starts): self
     {
-        return new self($this->anchorDay, $this->businessDayRule, $this->label, array_values($starts));
+        return new self($this->anchorDay, $this->businessDayRule, $this->label, array_values($starts), $this->autoBudgets);
+    }
+
+    public function withAutoBudgets(AutoBudgetOptions $autoBudgets): self
+    {
+        return new self($this->anchorDay, $this->businessDayRule, $this->label, $this->starts, $autoBudgets);
     }
 }
