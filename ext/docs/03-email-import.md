@@ -82,6 +82,7 @@ Writes are synchronous inside Firefly, so Python's FIDI `submitted`/settle/verif
      - rules and webhooks on;
      - on success → `imported` + `transaction_group_id`;
      - on exception → attempts+1 and the error saved; `failed` once attempts ≥ 3.
+   - **Payments seen from both ends** (`PaymentPairing`, an ext addition with no Python equivalent) are described in the section below.
 5. **Refresh message statuses** with Python's derivation ([06 §5](06-python-importer-reference.md#5-pipeline-and-state-pipelinepy-statepy)). A status change resets `label_synced`.
 6. **Sync labels** (live mode, `label_synced = 0`):
    - `imported` → add imported, remove unmatched;
@@ -96,6 +97,28 @@ Writes are synchronous inside Firefly, so Python's FIDI `submitted`/settle/verif
 - Switching a mailbox from shadow to **live** deletes its shadow rows (messages and transactions), so live mode looks at everything again. External-id dedup and the Gmail imported label stop any double import.
 
 **Dry run** (`--dry-run`): like shadow, but nothing is saved at all; the summary is printed.
+
+### Payments seen from both ends (`PaymentPairing`)
+
+When you pay one of your own accounts, for example an EFT from a cheque account to an FNB credit card, FNB sends two alerts:
+
+| Side | Alert | Rule |
+|---|---|---|
+| Paying | `R412.50 paid from Fusion Private a/c..111111 @ Eft. Avail R…. Ref.Fnbcc …. 9Jun 22:13`. FNB often sends it hours later, in a "Payments for <day>" email. | `paid_from` (withdrawal) |
+| Receiving | `R412.50 paid to FNB card a/c..222222. 9Jun 23:56`. It has no channel, no reference and no source. | `payment_received` (deposit), an ext addition to the FNB template |
+
+Booked separately, the two alerts would be an expense from the cheque account and an income into the card. The importer pairs them instead, using the receiving side:
+
+- **Order:** receiving sides are loaded after every other transaction in the run, so a paying side that arrived in the same run is already written.
+- **Candidates:** email-imported `paid_from` withdrawals in the same user group, with the same bank and the same amount, dated from 72 hours before to 60 minutes after the receiving side. Each one must still be a single withdrawal from **another** account to an **expense** account, so it is not paired yet.
+- **Exactly one candidate:** the withdrawal is moved to the receiving account through upstream's update service.
+  - The type comes from the transfer matrix: asset → card is a withdrawal with the liability as destination; asset → asset is a transfer.
+  - The receiving alert is added to its notes.
+  - Rules are not re-run; running balances and webhooks follow the change through `UpdatedSingleTransactionGroup`.
+  - The receiving side becomes `imported` and links that group.
+- **No candidate, or more than one:** the importer never guesses. The receiving side stays `pending`, with a note saying why, until 72 hours after the payment. After that it is booked on its own, as a deposit from "Payment received".
+- **Summary counters:** `paired` and `waiting` appear in the `ext:mail:poll` summary.
+- **Shadow mode** only reports the receiving side (`shadow_would_create`).
 
 ## Scheduling
 - `ExtServiceProvider` schedules `ext:mail:poll` **every 15 minutes**, `withoutOverlapping()`, through `callAfterResolving(Schedule::class, …)`. Upstream doesn't use Laravel's scheduler, so there's no conflict.

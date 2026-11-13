@@ -244,11 +244,15 @@ final class MailImporter
         $lookup       = new ExternalIdLookup($group);
         $existing     = $lookup->findMany($transactions->pluck('external_id')->all());
         $writer       = new TransactionWriter($user, $group, TransactionWriter::SOURCE_EMAIL);
-        foreach ($transactions as $transaction) {
+        $pairing      = new PaymentPairing($user, $group);
+        // receiving sides of payments go last, so a paying side found in the same run is already written
+        [$received, $others] = $transactions->partition(static fn (MailTransaction $t): bool => PaymentPairing::RULE === ($t->payload['rule'] ?? null));
+        foreach ($others->concat($received) as $transaction) {
             $live   = !$dryRun && $transaction->messages->contains(static fn (MailMessageModel $m): bool => null !== $m->mailbox && Mailbox::LIVE === $m->mailbox->mode);
 
             try {
-                $plan = $this->plan($transaction->parsed(), $resolver, $group);
+                $parsed = $transaction->parsed();
+                $plan   = $this->plan($parsed, $resolver, $group);
             } catch (Throwable $e) {
                 // a damaged row never stops the run
                 $transaction->fill(['status' => MailTransaction::FAILED, 'error' => mb_substr('Cannot read the stored transaction: '.$e->getMessage(), 0, 2000)])->save();
@@ -277,6 +281,23 @@ final class MailImporter
             }
 
             try {
+                if (PaymentPairing::applies($parsed)) {
+                    $candidates = $pairing->candidates($parsed, $plan['row']->account);
+                    if (1 === count($candidates)) {
+                        $paired = $pairing->attach($candidates[0], $plan['row']->account, $parsed);
+                        $transaction->fill(['status' => MailTransaction::IMPORTED, 'transaction_group_id' => $paired->id, 'error' => null])->save();
+                        ++$summary->transactions['paired'];
+
+                        continue;
+                    }
+                    if (PaymentPairing::waiting($parsed)) {
+                        $transaction->fill(['status' => MailTransaction::PENDING, 'error' => PaymentPairing::waitingNote(count($candidates), $parsed)])->save();
+                        ++$summary->transactions['waiting'];
+
+                        continue;
+                    }
+                    // no single paying side within the window: booked on its own, as a deposit
+                }
                 $stored = $writer->store($plan['row']);
                 $transaction->fill(['status' => MailTransaction::IMPORTED, 'transaction_group_id' => $stored->id, 'error' => null])->save();
                 ++$summary->transactions['created'];
