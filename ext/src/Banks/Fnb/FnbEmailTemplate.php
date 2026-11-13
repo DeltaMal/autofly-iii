@@ -170,12 +170,17 @@ final class FnbEmailTemplate implements EmailTemplate
         $toAccount    = '' === $g('to_account') ? null : $g('to_account');
 
         $counterparty = match ($rule['name']) {
-            'transfer'      => sprintf('%s ..%s', $g('to_type'), $g('to_account')),
-            'card_reserved' => '' !== $g('merchant') ? $g('merchant') : 'Card purchase',
-            'card_reversal' => 'Card reversal',
-            default         => '' !== $g('ref') ? $g('ref') : ('' !== $g('channel') ? $g('channel') : 'FNB'),
+            'transfer'         => sprintf('%s ..%s', $g('to_type'), $g('to_account')),
+            'card_reserved'    => '' !== $g('merchant') ? $g('merchant') : 'Card purchase',
+            'card_reversal'    => 'Card reversal',
+            'payment_received' => 'Payment received',
+            default            => '' !== $g('ref') ? $g('ref') : ('' !== $g('channel') ? $g('channel') : 'FNB'),
         };
-        $description  = 'transfer' === $rule['name'] ? sprintf('Transfer from %s to %s', $accountLabel, $counterparty) : $counterparty;
+        $description  = match ($rule['name']) {
+            'transfer'         => sprintf('Transfer from %s to %s', $accountLabel, $counterparty),
+            'payment_received' => sprintf('Payment into %s', $accountLabel),
+            default            => $counterparty,
+        };
         $tags         = [...array_values((array) ($config['tags'] ?? [])), ...$rule['tags']];
         if ('paid_from' === $rule['name'] && 'eft' === mb_strtolower($g('channel'), 'UTF-8')) {
             $tags[] = 'fnb-eft';
@@ -240,6 +245,10 @@ final class FnbEmailTemplate implements EmailTemplate
             ['name' => 'card_reversal', 'pattern' => $re("^REVERSAL of {$a} for (?P<reason>.+?) from {$ac} ".self::CARD.self::AVAIL.self::WHEN.'$'), 'kind' => 'deposit', 'tags' => ['fnb-reversal']],
             ['name' => 'paid_from', 'pattern' => $re("^{$a} paid from {$ac} @ (?P<channel>.+?)\\.".self::AVAIL.self::REF.self::WHEN.'$'), 'kind' => 'withdrawal', 'tags' => ['fnb-payment']],
             ['name' => 'paid_to', 'pattern' => $re("^{$a} paid to {$ac} @ (?P<channel>.+?)\\.".self::AVAIL.self::REF.self::WHEN.'$'), 'kind' => 'deposit', 'tags' => ['fnb-received']],
+            // ext addition (not in the Python importer): money arriving in an account, without channel or source, e.g.
+            // "R412.50 paid to FNB card a/c..123456. 9Jun 23:56" for a card payment. MailImporter pairs it with the
+            // "paid from" email of the paying account when there is one (PaymentPairing).
+            ['name' => 'payment_received', 'pattern' => $re("^{$a} paid to {$ac}\\.".self::WHEN.'$'), 'kind' => 'deposit', 'tags' => ['fnb-received']],
             ['name' => 'transfer', 'pattern' => $re("^{$a} t\\/fer from {$ac} to ".self::TO_ACCOUNT.' @ (?P<channel>.+?)\\.'.self::AVAIL.self::REF.self::WHEN.'$'), 'kind' => 'transfer', 'tags' => ['fnb-transfer']],
             ['name' => 'electricity_token', 'pattern' => $re('Elec Amt:.*Credit Token:'), 'kind' => null, 'tags' => []],
             ['name' => 'payment_link', 'pattern' => $re('^Payment Link created\b'), 'kind' => null, 'tags' => []],
