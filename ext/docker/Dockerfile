@@ -12,6 +12,17 @@
 ARG BASE_IMAGE="fireflyiii/base"
 ARG BASE_TAG="latest"
 ARG NODE_IMAGE="node:22-bookworm-slim"
+# The official image of the same upstream release (config/firefly.php 'version'); ext-image.yml passes it.
+ARG UPSTREAM_IMAGE="fireflyiii/core"
+ARG UPSTREAM_TAG="version-6.7.9"
+
+#
+# 0. Files that only upstream's release workflow makes, with tools outside the repository: the other
+#    languages (downloaded from Crowdin) and public/v3/i18n/*.json, the v3 front end's translations
+#    ("ff3:json-translations v3"). A build from source has neither; without the JSON every v3 date label,
+#    e.g. the top-right date range picker, shows "(DATE ERROR)". Taken from the official image instead.
+#
+FROM ${UPSTREAM_IMAGE}:${UPSTREAM_TAG} AS upstream
 
 #
 # 1. PHP dependencies, on the same base so the PHP version and extensions match (PHP >= 8.5).
@@ -77,9 +88,14 @@ RUN chmod uga+x /usr/local/bin/entrypoint.sh \
     && echo "${VERSION:-ext}" > /var/www/counter-main.txt \
     && echo "${ISODATE:-unknown}" > /var/www/build-date-main.txt
 
+# upstream's languages first, so the repository's own files (en_US) win where both exist
+COPY --chown=www-data:www-data --from=upstream /var/www/html/resources/lang $FIREFLY_III_PATH/resources/lang
 COPY --chown=www-data:www-data --from=php-build /build $FIREFLY_III_PATH
+COPY --chown=www-data:www-data --from=upstream /var/www/html/public/v3/i18n $FIREFLY_III_PATH/public/v3/i18n
 COPY --chown=www-data:www-data --from=assets /build/public/build $FIREFLY_III_PATH/public/build
 COPY --chown=www-data:www-data ext/docker/alerts.json $FIREFLY_III_PATH/resources/alerts.json
-RUN chmod -R 775 $FIREFLY_III_PATH/storage
+RUN chmod -R 775 $FIREFLY_III_PATH/storage \
+    && test -s $FIREFLY_III_PATH/public/v3/i18n/en-US.json \
+    && test -s $FIREFLY_III_PATH/resources/lang/en_US/firefly.php
 
 USER www-data
