@@ -43,7 +43,7 @@ final class MailImportSummary
     public array $messages          = [ParseResult::TRANSACTIONS => 0, ParseResult::IGNORED => 0, ParseResult::UNMATCHED => 0];
 
     /** @var array<string, int> */
-    public array $transactions      = ['created' => 0, 'already_in_firefly' => 0, 'unmapped' => 0, 'failed' => 0, 'shadow_exists' => 0, 'shadow_would_create' => 0];
+    public array $transactions      = ['created' => 0, 'paired' => 0, 'waiting' => 0, 'already_in_firefly' => 0, 'unmapped' => 0, 'failed' => 0, 'shadow_exists' => 0, 'shadow_would_create' => 0];
 
     public function __construct(public readonly string $mailbox, public readonly bool $dryRun, public readonly bool $shadow) {}
 

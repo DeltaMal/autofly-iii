@@ -171,15 +171,23 @@ final class TransactionWriter
                 : ['deposit', ['name' => $row->counterpartyName], ['id' => $row->account->id]];
         }
         [$from, $to] = $out ? [$row->account, $row->counterAccount] : [$row->counterAccount, $row->account];
+
+        return [self::bookingType($from, $to), ['id' => $from->id], ['id' => $to->id]];
+    }
+
+    /**
+     * The transaction type for money moving between two tracked (asset or liability) accounts.
+     */
+    public static function bookingType(Account $from, Account $to): string
+    {
         $fromIsLiability = self::isLiability($from);
         $toIsLiability   = self::isLiability($to);
-        $type            = match (true) {
+
+        return match (true) {
             !$fromIsLiability && $toIsLiability => 'withdrawal',
             $fromIsLiability && !$toIsLiability => 'deposit',
             default                             => 'transfer',
         };
-
-        return [$type, ['id' => $from->id], ['id' => $to->id]];
     }
 
     private static function isLiability(Account $account): bool

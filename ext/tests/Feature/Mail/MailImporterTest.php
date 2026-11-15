@@ -92,7 +92,7 @@ final class MailImporterTest extends FeatureTestCase
         self::assertContains('Email import 2026-10-27', $journal->tags->pluck('tag')->all());
 
         // statuses and labels
-        $statuses = MailMessageModel::query()->pluck('status', 'provider_message_id')->all();
+        $statuses = MailMessageModel::query()->orderBy('id')->pluck('status', 'provider_message_id')->all();
         // m2 carries the same reservation as m1 (same external id) plus an ATM line: it is unmatched
         self::assertSame(['m1' => 'imported', 'm2' => 'unmatched', 'm3' => 'ignored'], $statuses);
         self::assertSame(['Firefly/Imported'], $provider->labelsOf('m1'));
@@ -203,7 +203,7 @@ final class MailImporterTest extends FeatureTestCase
         self::assertSame([], $provider->labelCalls);
         self::assertSame(1, $summary->transactions['shadow_exists']);
         self::assertSame(1, $summary->transactions['shadow_would_create']);
-        self::assertSame(['m1' => 'shadow_would_create', 'm2' => 'shadow_exists'], MailMessageModel::query()->pluck('status', 'provider_message_id')->all());
+        self::assertSame(['m1' => 'shadow_would_create', 'm2' => 'shadow_exists'], MailMessageModel::query()->orderBy('id')->pluck('status', 'provider_message_id')->all());
 
         // going live deletes the shadow rows; the next run imports m1 and dedups m2
         MailImporter::leaveShadowMode($mailbox);
